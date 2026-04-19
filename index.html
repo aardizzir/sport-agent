@@ -31,517 +31,87 @@
   --mono: 'JetBrains Mono', monospace;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--body); -webkit-font-smoothing: antialiased; }
+.app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; max-width: 520px; margin: 0 auto; background: var(--bg); position: relative; }
 
-html, body {
-  height: 100%;
-  overflow: hidden;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--body);
-  -webkit-font-smoothing: antialiased;
-}
+.header { padding: max(env(safe-area-inset-top), 16px) 20px 14px; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; gap: 12px; z-index: 10; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%); display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 700; font-size: 18px; color: #0a0a0a; position: relative; flex-shrink: 0; }
+.avatar::after { content: ''; position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--green); border: 2px solid var(--bg); }
+.avatar.thinking::after { background: var(--yellow); animation: pulse 1s infinite; }
+.avatar.error::after { background: var(--red); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.header-info { flex: 1; min-width: 0; }
+.header-name { font-family: var(--display); font-size: 17px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+.header-status { font-size: 11px; color: var(--text-dim); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+.header-menu { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+.header-menu:active { background: var(--surface); }
+.header-menu svg { stroke: var(--text-dim); }
 
-.app {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  height: 100dvh;
-  max-width: 520px;
-  margin: 0 auto;
-  background: var(--bg);
-  position: relative;
-}
-
-/* ========== HEADER ========== */
-.header {
-  padding: max(env(safe-area-inset-top), 16px) 20px 14px;
-  border-bottom: 1px solid var(--border);
-  background: rgba(10,10,10,0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 10;
-}
-
-.avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--display);
-  font-weight: 700;
-  font-size: 18px;
-  color: #0a0a0a;
-  position: relative;
-  flex-shrink: 0;
-}
-
-.avatar::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--green);
-  border: 2px solid var(--bg);
-}
-
-.header-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.header-name {
-  font-family: var(--display);
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-}
-
-.header-status {
-  font-size: 11px;
-  color: var(--text-dim);
-  font-family: var(--mono);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-top: 2px;
-}
-
-.header-menu {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.header-menu:active {
-  background: var(--surface);
-}
-
-.header-menu svg {
-  stroke: var(--text-dim);
-}
-
-/* ========== CONVERSATION ========== */
-.conversation {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px 16px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  scroll-behavior: smooth;
-}
-
-.conversation::-webkit-scrollbar {
-  width: 0;
-}
-
-.day-marker {
-  align-self: center;
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--text-faint);
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  padding: 6px 12px;
-  margin: 8px 0;
-}
-
-.msg {
-  max-width: 85%;
-  animation: msgIn 0.3s ease-out;
-}
-
-@keyframes msgIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.msg-agent {
-  align-self: flex-start;
-}
-
-.msg-user {
-  align-self: flex-end;
-}
-
-.msg-bubble {
-  padding: 12px 16px;
-  border-radius: 18px;
-  font-size: 15px;
-  line-height: 1.5;
-  word-wrap: break-word;
-}
-
-.msg-agent .msg-bubble {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-bottom-left-radius: 6px;
-  color: var(--text);
-}
-
-.msg-user .msg-bubble {
-  background: var(--accent);
-  color: #0a0a0a;
-  border-bottom-right-radius: 6px;
-  font-weight: 500;
-}
-
-.msg-time {
-  font-size: 10px;
-  color: var(--text-faint);
-  font-family: var(--mono);
-  margin-top: 4px;
-  padding: 0 6px;
-}
-
+.conversation { flex: 1; overflow-y: auto; padding: 20px 16px 8px; display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth; }
+.conversation::-webkit-scrollbar { width: 0; }
+.day-marker { align-self: center; font-family: var(--mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.15em; padding: 6px 12px; margin: 8px 0; }
+.msg { max-width: 85%; animation: msgIn 0.3s ease-out; }
+@keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.msg-agent { align-self: flex-start; }
+.msg-user { align-self: flex-end; }
+.msg-bubble { padding: 12px 16px; border-radius: 18px; font-size: 15px; line-height: 1.5; word-wrap: break-word; white-space: pre-wrap; }
+.msg-agent .msg-bubble { background: var(--bg-elevated); border: 1px solid var(--border); border-bottom-left-radius: 6px; color: var(--text); }
+.msg-user .msg-bubble { background: var(--accent); color: #0a0a0a; border-bottom-right-radius: 6px; font-weight: 500; }
+.msg-bubble strong { font-weight: 600; color: var(--text); }
+.msg-time { font-size: 10px; color: var(--text-faint); font-family: var(--mono); margin-top: 4px; padding: 0 6px; }
 .msg-user .msg-time { text-align: right; }
+.msg-error .msg-bubble { background: rgba(239,68,68,0.1); border-color: var(--red); color: var(--red); }
 
-/* ========== VERDICT CARD ========== */
-.verdict {
-  align-self: stretch;
-  max-width: 100%;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  overflow: hidden;
-  margin: 4px 0;
-  animation: msgIn 0.4s ease-out;
-}
-
-.verdict-header {
-  padding: 14px 16px 12px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.verdict-status {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
+.verdict { align-self: stretch; max-width: 100%; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin: 4px 0; animation: msgIn 0.4s ease-out; }
+.verdict-header { padding: 14px 16px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.verdict-status { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .verdict-status.go { background: var(--green); box-shadow: 0 0 12px var(--green); }
 .verdict-status.caution { background: var(--yellow); box-shadow: 0 0 12px var(--yellow); }
 .verdict-status.stop { background: var(--red); box-shadow: 0 0 12px var(--red); }
+.verdict-label { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-dim); }
+.verdict-body { padding: 16px; }
+.verdict-title { font-family: var(--display); font-size: 26px; font-weight: 600; line-height: 1.1; letter-spacing: -0.03em; margin-bottom: 10px; }
+.verdict-reasoning { font-size: 14px; line-height: 1.55; color: var(--text-dim); margin-bottom: 14px; }
+.verdict-reasoning strong { color: var(--text); font-weight: 500; }
+.verdict-actions { padding-top: 14px; border-top: 1px solid var(--border); }
+.verdict-actions-title { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-faint); margin-bottom: 10px; }
+.verdict-actions-title.avoid { margin-top: 12px; color: var(--text-faint); }
+.action-item { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; font-size: 14px; }
+.action-item::before { content: ''; width: 6px; height: 6px; background: var(--accent); margin-top: 7px; flex-shrink: 0; }
+.action-item.avoid::before { background: var(--text-faint); }
+.action-item.avoid { color: var(--text-dim); }
 
-.verdict-label {
-  font-family: var(--mono);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-dim);
-}
-
-.verdict-body {
-  padding: 16px;
-}
-
-.verdict-title {
-  font-family: var(--display);
-  font-size: 28px;
-  font-weight: 600;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  margin-bottom: 10px;
-}
-
-.verdict-reasoning {
-  font-size: 14px;
-  line-height: 1.55;
-  color: var(--text-dim);
-  margin-bottom: 14px;
-}
-
-.verdict-reasoning strong {
-  color: var(--text);
-  font-weight: 500;
-}
-
-.verdict-actions {
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
-}
-
-.verdict-actions-title {
-  font-family: var(--mono);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-faint);
-  margin-bottom: 10px;
-}
-
-.action-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 6px 0;
-  font-size: 14px;
-}
-
-.action-item::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  background: var(--accent);
-  margin-top: 7px;
-  flex-shrink: 0;
-}
-
-.action-item.avoid::before {
-  background: var(--text-faint);
-}
-
-.action-item.avoid {
-  color: var(--text-dim);
-}
-
-/* ========== TYPING INDICATOR ========== */
-.typing {
-  align-self: flex-start;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  padding: 14px 18px;
-  border-radius: 18px 18px 18px 6px;
-  display: flex;
-  gap: 4px;
-}
-
-.typing span {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--text-dim);
-  animation: typingPulse 1.4s infinite;
-}
-
+.typing { align-self: flex-start; background: var(--bg-elevated); border: 1px solid var(--border); padding: 14px 18px; border-radius: 18px 18px 18px 6px; display: flex; gap: 4px; }
+.typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); animation: typingPulse 1.4s infinite; }
 .typing span:nth-child(2) { animation-delay: 0.2s; }
 .typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingPulse { 0%,60%,100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
 
-@keyframes typingPulse {
-  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
-  30% { opacity: 1; transform: translateY(-3px); }
-}
+.streaming-cursor { display: inline-block; width: 8px; height: 14px; background: var(--accent); margin-left: 2px; animation: blink 0.8s infinite; vertical-align: text-bottom; }
+@keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
 
-/* ========== QUICK REPLIES ========== */
-.quick-replies {
-  padding: 4px 16px 12px;
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
+.input-zone { padding: 10px 12px max(env(safe-area-inset-bottom), 12px); border-top: 1px solid var(--border); background: var(--bg); }
+.input-wrap { display: flex; align-items: flex-end; gap: 8px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 22px; padding: 4px 4px 4px 16px; transition: border-color 0.2s; }
+.input-wrap:focus-within { border-color: var(--accent); }
+.input-field { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-family: var(--body); font-size: 15px; padding: 10px 0; resize: none; max-height: 100px; min-height: 24px; line-height: 1.4; }
+.input-field::placeholder { color: var(--text-faint); }
+.send-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: var(--accent); color: #0a0a0a; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: transform 0.15s, opacity 0.2s; }
+.send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.send-btn:not(:disabled):active { transform: scale(0.92); }
 
-.quick-replies::-webkit-scrollbar { display: none; }
-
-.quick-reply {
-  flex-shrink: 0;
-  padding: 9px 16px;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 100px;
-  color: var(--text);
-  font-family: var(--body);
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.quick-reply:active {
-  background: var(--surface);
-  transform: scale(0.96);
-}
-
-/* ========== INPUT ========== */
-.input-zone {
-  padding: 10px 12px max(env(safe-area-inset-bottom), 12px);
-  border-top: 1px solid var(--border);
-  background: var(--bg);
-}
-
-.input-wrap {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: 22px;
-  padding: 4px 4px 4px 16px;
-  transition: border-color 0.2s;
-}
-
-.input-wrap:focus-within {
-  border-color: var(--accent);
-}
-
-.input-field {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--text);
-  font-family: var(--body);
-  font-size: 15px;
-  padding: 10px 0;
-  resize: none;
-  max-height: 100px;
-  min-height: 24px;
-  line-height: 1.4;
-}
-
-.input-field::placeholder {
-  color: var(--text-faint);
-}
-
-.send-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: var(--accent);
-  color: #0a0a0a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: transform 0.15s, opacity 0.2s;
-}
-
-.send-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.send-btn:not(:disabled):active {
-  transform: scale(0.92);
-}
-
-/* ========== ONBOARDING ========== */
-.onboarding {
-  position: absolute;
-  inset: 0;
-  background: var(--bg);
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  padding: max(env(safe-area-inset-top), 40px) 28px max(env(safe-area-inset-bottom), 28px);
-  animation: fadeIn 0.4s;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.onboarding-mark {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.25em;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  margin-bottom: auto;
-  padding-top: 20px;
-}
-
-.onboarding-title {
-  font-family: var(--display);
-  font-size: 44px;
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  margin-bottom: 16px;
-}
-
-.onboarding-title em {
-  font-style: italic;
-  color: var(--accent);
-  font-weight: 300;
-}
-
-.onboarding-sub {
-  font-size: 16px;
-  line-height: 1.55;
-  color: var(--text-dim);
-  margin-bottom: 40px;
-  max-width: 340px;
-}
-
-.onboarding-points {
-  list-style: none;
-  margin-bottom: 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.onboarding-points li {
-  display: flex;
-  gap: 14px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--text);
-}
-
-.onboarding-points li span {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--accent);
-  padding-top: 2px;
-  min-width: 20px;
-}
-
-.onboarding-cta {
-  padding: 16px;
-  background: var(--text);
-  color: var(--bg);
-  border: none;
-  border-radius: 100px;
-  font-family: var(--body);
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.15s;
-}
-
-.onboarding-cta:active {
-  transform: scale(0.98);
-}
-
-.onboarding-fine {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--text-faint);
-  text-align: center;
-  margin-top: 16px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
+.onboarding { position: absolute; inset: 0; background: var(--bg); z-index: 20; display: flex; flex-direction: column; padding: max(env(safe-area-inset-top), 40px) 28px max(env(safe-area-inset-bottom), 28px); animation: fadeIn 0.4s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.onboarding-mark { font-family: var(--mono); font-size: 10px; letter-spacing: 0.25em; color: var(--text-dim); text-transform: uppercase; margin-bottom: auto; padding-top: 20px; }
+.onboarding-title { font-family: var(--display); font-size: 44px; font-weight: 400; line-height: 1; letter-spacing: -0.03em; margin-bottom: 16px; }
+.onboarding-title em { font-style: italic; color: var(--accent); font-weight: 300; }
+.onboarding-sub { font-size: 16px; line-height: 1.55; color: var(--text-dim); margin-bottom: 40px; max-width: 340px; }
+.onboarding-points { list-style: none; margin-bottom: 40px; display: flex; flex-direction: column; gap: 14px; }
+.onboarding-points li { display: flex; gap: 14px; font-size: 14px; line-height: 1.5; color: var(--text); }
+.onboarding-points li span { font-family: var(--mono); font-size: 11px; color: var(--accent); padding-top: 2px; min-width: 20px; }
+.onboarding-cta { padding: 16px; background: var(--text); color: var(--bg); border: none; border-radius: 100px; font-family: var(--body); font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.15s; }
+.onboarding-cta:active { transform: scale(0.98); }
+.onboarding-fine { font-family: var(--mono); font-size: 10px; color: var(--text-faint); text-align: center; margin-top: 16px; letter-spacing: 0.08em; text-transform: uppercase; }
 
 .hidden { display: none !important; }
 </style>
@@ -550,32 +120,26 @@ html, body {
 
 <div class="app">
 
-  <!-- ONBOARDING -->
   <div class="onboarding" id="onboarding">
-    <div class="onboarding-mark">Sport Agent · v0.1</div>
-    
+    <div class="onboarding-mark">Sport Agent · v0.2 · IA Real</div>
     <h1 class="onboarding-title">Tu cuerpo<br>te habla.<br><em>Yo traduzco.</em></h1>
-    
-    <p class="onboarding-sub">No soy otra app de métricas. Soy tu entrenador de bolsillo: te pregunto, te leo, y te digo qué hacer hoy.</p>
-    
+    <p class="onboarding-sub">Tu entrenador de bolsillo con criterio real. Te pregunta, te lee, te dice qué hacer hoy.</p>
     <ul class="onboarding-points">
-      <li><span>01</span><div>Contame cómo amaneciste, qué hiciste ayer, qué te duele.</div></li>
+      <li><span>01</span><div>Contame cómo estás, qué hiciste ayer, qué te duele.</div></li>
       <li><span>02</span><div>Te analizo como lo haría un kine, un entrenador y un fisio juntos.</div></li>
       <li><span>03</span><div>Te digo si entrenar, bajar carga o parar. Con razones claras.</div></li>
     </ul>
-    
     <button class="onboarding-cta" onclick="startChat()">Empezar check-in</button>
     <div class="onboarding-fine">Prototipo personal · No reemplaza diagnóstico médico</div>
   </div>
 
-  <!-- HEADER -->
   <div class="header">
-    <div class="avatar">SA</div>
+    <div class="avatar" id="avatar">SA</div>
     <div class="header-info">
       <div class="header-name">Sport Agent</div>
-      <div class="header-status">● En línea</div>
+      <div class="header-status" id="headerStatus">● En línea</div>
     </div>
-    <div class="header-menu" onclick="resetChat()">
+    <div class="header-menu" onclick="resetChat()" title="Reiniciar conversación">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round">
         <path d="M3 12a9 9 0 1 0 9-9"/>
         <path d="M3 4v5h5"/>
@@ -583,15 +147,10 @@ html, body {
     </div>
   </div>
 
-  <!-- CONVERSATION -->
   <div class="conversation" id="conversation">
     <div class="day-marker" id="dayMarker">Hoy</div>
   </div>
 
-  <!-- QUICK REPLIES -->
-  <div class="quick-replies" id="quickReplies"></div>
-
-  <!-- INPUT -->
   <div class="input-zone">
     <div class="input-wrap">
       <textarea class="input-field" id="inputField" placeholder="Contame cómo estás..." rows="1"></textarea>
@@ -606,38 +165,74 @@ html, body {
 </div>
 
 <script>
-// ========== STATE ==========
-let conversationState = 'awaiting_greeting';
-let userContext = {};
+const WORKER_URL = 'https://sport-agent-api.a-ardizzir.workers.dev';
+
+let messageHistory = [];
+let isStreaming = false;
+const STORAGE_KEY = 'sport_agent_history_v1';
+
 const conversation = document.getElementById('conversation');
-const quickReplies = document.getElementById('quickReplies');
 const input = document.getElementById('inputField');
 const sendBtn = document.getElementById('sendBtn');
+const avatar = document.getElementById('avatar');
+const headerStatus = document.getElementById('headerStatus');
 
-// ========== HELPERS ==========
+function saveHistory() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(messageHistory)); } catch (e) {}
+}
+
+function loadHistory() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) { messageHistory = JSON.parse(saved); return true; }
+  } catch (e) {}
+  return false;
+}
+
 function getTime() {
   const d = new Date();
   return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
 }
 
-function scrollToBottom() {
+function scrollToBottom(smooth = true) {
   setTimeout(() => {
-    conversation.scrollTop = conversation.scrollHeight;
+    conversation.scrollTo({ top: conversation.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
   }, 50);
 }
 
-function addMessage(text, sender='agent') {
+function setAgentState(state) {
+  avatar.classList.remove('thinking', 'error');
+  if (state === 'thinking') { avatar.classList.add('thinking'); headerStatus.textContent = '● Pensando...'; }
+  else if (state === 'error') { avatar.classList.add('error'); headerStatus.textContent = '● Error de conexión'; }
+  else { headerStatus.textContent = '● En línea'; }
+}
+
+function formatText(text) {
+  return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+}
+
+function escapeHtml(str) {
+  return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+}
+
+function renderUserMessage(text) {
   const msg = document.createElement('div');
-  msg.className = 'msg msg-' + sender;
-  msg.innerHTML = `
-    <div class="msg-bubble">${text}</div>
-    <div class="msg-time">${getTime()}</div>
-  `;
+  msg.className = 'msg msg-user';
+  msg.innerHTML = `<div class="msg-bubble">${escapeHtml(text)}</div><div class="msg-time">${getTime()}</div>`;
   conversation.appendChild(msg);
   scrollToBottom();
 }
 
-function addTyping() {
+function createAgentBubble() {
+  const msg = document.createElement('div');
+  msg.className = 'msg msg-agent';
+  msg.innerHTML = `<div class="msg-bubble"><span class="msg-content"></span><span class="streaming-cursor"></span></div><div class="msg-time">${getTime()}</div>`;
+  conversation.appendChild(msg);
+  scrollToBottom();
+  return { container: msg, content: msg.querySelector('.msg-content'), cursor: msg.querySelector('.streaming-cursor') };
+}
+
+function showTypingDots() {
   const t = document.createElement('div');
   t.className = 'typing';
   t.id = 'typingIndicator';
@@ -646,52 +241,37 @@ function addTyping() {
   scrollToBottom();
 }
 
-function removeTyping() {
+function removeTypingDots() {
   const t = document.getElementById('typingIndicator');
   if (t) t.remove();
 }
 
-function agentSay(text, delay=900) {
-  return new Promise(resolve => {
-    addTyping();
-    setTimeout(() => {
-      removeTyping();
-      addMessage(text, 'agent');
-      resolve();
-    }, delay);
-  });
+function renderError(message) {
+  const msg = document.createElement('div');
+  msg.className = 'msg msg-agent msg-error';
+  msg.innerHTML = `<div class="msg-bubble">⚠ ${escapeHtml(message)}</div><div class="msg-time">${getTime()}</div>`;
+  conversation.appendChild(msg);
+  scrollToBottom();
 }
 
-function setQuickReplies(options) {
-  quickReplies.innerHTML = '';
-  options.forEach(opt => {
-    const btn = document.createElement('button');
-    btn.className = 'quick-reply';
-    btn.textContent = opt.label;
-    btn.onclick = () => {
-      addMessage(opt.label, 'user');
-      quickReplies.innerHTML = '';
-      handleResponse(opt.value || opt.label);
-    };
-    quickReplies.appendChild(btn);
-  });
-}
-
-function showVerdict(config) {
+function renderVerdictCard(data) {
   const v = document.createElement('div');
   v.className = 'verdict';
+  const actionsDoHtml = (data.actions_do || []).map(a => `<div class="action-item">${escapeHtml(a)}</div>`).join('');
+  const actionsAvoidHtml = (data.actions_avoid || []).map(a => `<div class="action-item avoid">${escapeHtml(a)}</div>`).join('');
   v.innerHTML = `
     <div class="verdict-header">
-      <div class="verdict-status ${config.status}"></div>
-      <div class="verdict-label">${config.label}</div>
+      <div class="verdict-status ${data.status}"></div>
+      <div class="verdict-label">${escapeHtml(data.label || '')}</div>
     </div>
     <div class="verdict-body">
-      <div class="verdict-title">${config.title}</div>
-      <div class="verdict-reasoning">${config.reasoning}</div>
-      ${config.actions ? `
+      <div class="verdict-title">${escapeHtml(data.title || '')}</div>
+      <div class="verdict-reasoning">${formatText(data.reasoning || '')}</div>
+      ${actionsDoHtml ? `
         <div class="verdict-actions">
           <div class="verdict-actions-title">Plan de acción</div>
-          ${config.actions.map(a => `<div class="action-item ${a.avoid ? 'avoid' : ''}">${a.text}</div>`).join('')}
+          ${actionsDoHtml}
+          ${actionsAvoidHtml ? `<div class="verdict-actions-title avoid">Evitá</div>${actionsAvoidHtml}` : ''}
         </div>
       ` : ''}
     </div>
@@ -700,395 +280,172 @@ function showVerdict(config) {
   scrollToBottom();
 }
 
-// ========== FLOW ==========
+function processCompleteResponse(fullText, agentBubble) {
+  const verdictRegex = /<<<VERDICT\s*([\s\S]*?)\s*VERDICT>>>/;
+  const match = fullText.match(verdictRegex);
+  if (match) {
+    const beforeText = fullText.substring(0, match.index).trim();
+    const afterText = fullText.substring(match.index + match[0].length).trim();
+    const jsonStr = match[1].trim();
+    try {
+      const verdictData = JSON.parse(jsonStr);
+      if (beforeText) { agentBubble.content.innerHTML = formatText(beforeText); agentBubble.cursor.remove(); }
+      else { agentBubble.container.remove(); }
+      renderVerdictCard(verdictData);
+      if (afterText) {
+        const afterBubble = createAgentBubble();
+        afterBubble.content.innerHTML = formatText(afterText);
+        afterBubble.cursor.remove();
+      }
+      return fullText;
+    } catch (e) {
+      agentBubble.content.innerHTML = formatText(fullText);
+      agentBubble.cursor.remove();
+    }
+  } else {
+    agentBubble.content.innerHTML = formatText(fullText);
+    agentBubble.cursor.remove();
+  }
+  return fullText;
+}
+
+async function callAgent(userMessage) {
+  messageHistory.push({ role: 'user', content: userMessage });
+  setAgentState('thinking');
+  isStreaming = true;
+  sendBtn.disabled = true;
+  showTypingDots();
+  
+  let agentBubble = null;
+  let fullText = '';
+  
+  try {
+    const response = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: messageHistory }),
+    });
+    
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || `Error ${response.status}`);
+    }
+    
+    removeTypingDots();
+    agentBubble = createAgentBubble();
+    
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (!data || data === '[DONE]') continue;
+        try {
+          const event = JSON.parse(data);
+          if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+            const chunk = event.delta.text;
+            fullText += chunk;
+            if (!fullText.includes('<<<VERDICT')) {
+              agentBubble.content.innerHTML = formatText(fullText);
+              scrollToBottom(false);
+            } else {
+              const idx = fullText.indexOf('<<<VERDICT');
+              const visibleText = fullText.substring(0, idx).trim();
+              agentBubble.content.innerHTML = formatText(visibleText);
+              agentBubble.cursor.style.background = 'var(--yellow)';
+            }
+          }
+        } catch (e) {}
+      }
+    }
+    
+    processCompleteResponse(fullText, agentBubble);
+    messageHistory.push({ role: 'assistant', content: fullText });
+    saveHistory();
+    setAgentState('online');
+    
+  } catch (error) {
+    console.error('Error:', error);
+    removeTypingDots();
+    if (agentBubble) agentBubble.container.remove();
+    let errorMsg = 'No pude conectar con el agente. ';
+    if (error.message.includes('Failed to fetch')) errorMsg += 'Revisá tu conexión a internet.';
+    else errorMsg += error.message;
+    renderError(errorMsg);
+    setAgentState('error');
+    messageHistory.pop();
+  } finally {
+    isStreaming = false;
+    sendBtn.disabled = input.value.trim() === '';
+    input.focus();
+  }
+}
+
 function startChat() {
   document.getElementById('onboarding').classList.add('hidden');
-  setTimeout(startConversation, 400);
+  if (messageHistory.length === 0) {
+    setTimeout(() => {
+      callAgent('[SISTEMA: El usuario acaba de abrir la app por primera vez. Saludalo brevemente y hacele tu primera pregunta del check-in.]');
+    }, 400);
+  } else {
+    restoreVisualHistory();
+  }
+}
+
+function restoreVisualHistory() {
+  for (const msg of messageHistory) {
+    if (msg.role === 'user' && !msg.content.startsWith('[SISTEMA:')) {
+      renderUserMessage(msg.content);
+    } else if (msg.role === 'assistant') {
+      const bubble = createAgentBubble();
+      processCompleteResponse(msg.content, bubble);
+    }
+  }
 }
 
 function resetChat() {
-  if (confirm('¿Reiniciar conversación?')) {
-    conversation.innerHTML = '<div class="day-marker">Hoy</div>';
-    quickReplies.innerHTML = '';
-    userContext = {};
-    conversationState = 'awaiting_greeting';
-    startConversation();
-  }
+  if (!confirm('¿Reiniciar conversación? Se borrará el historial.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  messageHistory = [];
+  conversation.innerHTML = '<div class="day-marker">Hoy</div>';
+  setTimeout(() => {
+    callAgent('[SISTEMA: El usuario reinició la conversación. Saludá brevemente y hacele tu primera pregunta del check-in.]');
+  }, 300);
 }
 
-async function startConversation() {
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Buen día' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
-  
-  await agentSay(`${greeting}. ¿Listo para el check-in de hoy?`, 600);
-  await agentSay('Arranquemos simple: <strong>¿cómo amaneciste hoy?</strong>', 1100);
-  
-  setQuickReplies([
-    { label: '💪 Con energía', value: 'energia_alta' },
-    { label: '😐 Normal', value: 'energia_normal' },
-    { label: '😵 Cansado', value: 'energia_baja' },
-    { label: '🤕 Con dolor', value: 'con_dolor' }
-  ]);
-}
-
-async function handleResponse(value) {
-  // Rama por estado + valor
-  
-  if (conversationState === 'awaiting_greeting') {
-    userContext.energia = value;
-    
-    if (value === 'energia_alta') {
-      await agentSay('Buenísimo. Energía alta es señal verde, pero no significa libertad total. Depende de qué hiciste estos días.', 900);
-      conversationState = 'asking_training';
-      await agentSay('<strong>¿Qué entrenaste ayer?</strong>', 700);
-      setQuickReplies([
-        { label: 'Gym / fuerza', value: 'gym' },
-        { label: 'Deporte en cancha', value: 'cancha' },
-        { label: 'Cardio / running', value: 'cardio' },
-        { label: 'Descansé', value: 'descanso' }
-      ]);
-    }
-    else if (value === 'energia_normal') {
-      await agentSay('Ok. "Normal" es la zona gris donde se toman la mayoría de decisiones importantes. Vamos a afinar.', 900);
-      conversationState = 'asking_training';
-      await agentSay('<strong>¿Qué entrenaste ayer?</strong>', 700);
-      setQuickReplies([
-        { label: 'Gym / fuerza', value: 'gym' },
-        { label: 'Deporte en cancha', value: 'cancha' },
-        { label: 'Cardio / running', value: 'cardio' },
-        { label: 'Descansé', value: 'descanso' }
-      ]);
-    }
-    else if (value === 'energia_baja') {
-      await agentSay('Te escucho. El cansancio no es el enemigo, es información. Vamos a leerla bien.', 900);
-      conversationState = 'asking_sleep';
-      await agentSay('<strong>¿Cómo dormiste?</strong>', 700);
-      setQuickReplies([
-        { label: 'Menos de 6hs', value: 'sueno_malo' },
-        { label: '6-7hs pero inquieto', value: 'sueno_regular' },
-        { label: '7hs+ bien', value: 'sueno_bueno' }
-      ]);
-    }
-    else if (value === 'con_dolor') {
-      await agentSay('Ok, manejémoslo con cabeza. El dolor merece atención, no pánico.', 900);
-      conversationState = 'asking_pain_zone';
-      await agentSay('<strong>¿Dónde te duele?</strong>', 700);
-      setQuickReplies([
-        { label: '🦵 Tobillo / pie', value: 'dolor_tobillo' },
-        { label: '🦴 Rodilla', value: 'dolor_rodilla' },
-        { label: '💪 Hombro', value: 'dolor_hombro' },
-        { label: '🔙 Espalda', value: 'dolor_espalda' },
-        { label: 'Otro', value: 'dolor_otro' }
-      ]);
-    }
-  }
-  
-  else if (conversationState === 'asking_training') {
-    userContext.entrenamiento_ayer = value;
-    conversationState = 'asking_week_load';
-    await agentSay('Entendido. Una más:', 700);
-    await agentSay('<strong>¿Cuántas sesiones duras llevás esta semana?</strong>', 700);
-    setQuickReplies([
-      { label: '1-2', value: 'carga_baja' },
-      { label: '3-4', value: 'carga_media' },
-      { label: '5 o más', value: 'carga_alta' }
-    ]);
-  }
-  
-  else if (conversationState === 'asking_week_load') {
-    userContext.carga_semanal = value;
-    await deliverVerdict_training();
-  }
-  
-  else if (conversationState === 'asking_sleep') {
-    userContext.sueno = value;
-    conversationState = 'asking_training_cansado';
-    await agentSay('Ok.', 500);
-    await agentSay('<strong>¿Qué entrenaste ayer?</strong>', 700);
-    setQuickReplies([
-      { label: 'Gym / fuerza', value: 'gym' },
-      { label: 'Deporte en cancha', value: 'cancha' },
-      { label: 'Cardio largo', value: 'cardio' },
-      { label: 'Dos cosas en el día', value: 'doble' }
-    ]);
-  }
-  
-  else if (conversationState === 'asking_training_cansado') {
-    userContext.entrenamiento_ayer = value;
-    await deliverVerdict_cansancio();
-  }
-  
-  else if (conversationState === 'asking_pain_zone') {
-    userContext.zona_dolor = value;
-    conversationState = 'asking_pain_intensity';
-    await agentSay('<strong>¿Qué intensidad tiene?</strong>', 700);
-    setQuickReplies([
-      { label: '1-3 · Molestia leve', value: 'dolor_leve' },
-      { label: '4-6 · Se siente', value: 'dolor_medio' },
-      { label: '7+ · Fuerte', value: 'dolor_fuerte' }
-    ]);
-  }
-  
-  else if (conversationState === 'asking_pain_intensity') {
-    userContext.intensidad_dolor = value;
-    conversationState = 'asking_pain_context';
-    await agentSay('<strong>¿Apareció de un movimiento o después del entrenamiento?</strong>', 700);
-    setQuickReplies([
-      { label: 'Después del entrenamiento', value: 'post_ent' },
-      { label: 'Durante un movimiento', value: 'durante_mov' },
-      { label: 'Me levanté así', value: 'al_despertar' }
-    ]);
-  }
-  
-  else if (conversationState === 'asking_pain_context') {
-    userContext.contexto_dolor = value;
-    await deliverVerdict_dolor();
-  }
-  
-  else if (conversationState === 'post_verdict') {
-    if (value === 'dudas') {
-      await agentSay('Dale, preguntame lo que quieras. Escribime abajo con tus propias palabras.', 800);
-      input.placeholder = 'Escribí tu duda...';
-      input.focus();
-    } else if (value === 'listo') {
-      await agentSay('Perfecto. Registrado. Mañana te vuelvo a preguntar cómo fue el día.', 800);
-      await agentSay('Recordá: el plan es una hipótesis, no un dogma. Si algo cambia fuerte, volvé a hablarme.', 1200);
-    }
-  }
-}
-
-// ========== VERDICTS ==========
-async function deliverVerdict_training() {
-  await agentSay('Dejame procesar...', 700);
-  await new Promise(r => setTimeout(r, 800));
-  
-  const e = userContext.entrenamiento_ayer;
-  const c = userContext.carga_semanal;
-  const en = userContext.energia;
-  
-  // Lógica: si energía alta + carga baja/media → VERDE
-  // Si carga alta + energía normal → AMARILLO
-  
-  if (en === 'energia_alta' && (c === 'carga_baja' || c === 'carga_media')) {
-    showVerdict({
-      status: 'go',
-      label: 'Verde · Luz para entrenar',
-      title: 'Dale con todo. Tu cuerpo está listo.',
-      reasoning: 'Energía alta y carga acumulada manejable. Es el momento de <strong>empujar sin miedo</strong>. La única trampa acá es entrenar tan bien que no registres que llegó la fatiga.',
-      actions: [
-        { text: 'Entrená según tu planificación' },
-        { text: 'Monitoreá sensaciones en la 2da mitad de la sesión' },
-        { text: 'Hidratación y carbos según duración' },
-        { text: 'Si dormís mal esta noche → mañana bajamos', avoid: true }
-      ]
-    });
-  }
-  else if (c === 'carga_alta') {
-    showVerdict({
-      status: 'caution',
-      label: 'Amarillo · Bajá un cambio',
-      title: 'Entrená, pero no al 100%.',
-      reasoning: '5+ sesiones duras esta semana te pone en <strong>zona de carga acumulada</strong>. Tu energía está bien hoy, pero la fatiga real llega con retraso. Los profesionales entrenan al 70-80% los días que los amateurs se rompen.',
-      actions: [
-        { text: 'Sesión al 70-75% intensidad' },
-        { text: 'Reducí volumen (series o tiempo) un 30%' },
-        { text: 'Técnica > peso. Movete perfecto' },
-        { text: 'PRs o top sets', avoid: true },
-        { text: 'Cardio HIIT extra', avoid: true }
-      ]
-    });
-  }
-  else {
-    showVerdict({
-      status: 'go',
-      label: 'Verde · Entrená normal',
-      title: 'Todo en orden. Ejecutá tu plan.',
-      reasoning: 'Tu cuerpo te está dando luz verde. No hay señales rojas ni acumulación crítica. <strong>Entrená según lo planificado</strong> y prestá atención a cómo responde en las primeras series.',
-      actions: [
-        { text: 'Entrenamiento normal según tu planificación' },
-        { text: 'Calentamiento completo, no te saltees' },
-        { text: 'Comida: carbos + proteína 1-2h antes' }
-      ]
-    });
-  }
-  
-  await postVerdictOptions();
-}
-
-async function deliverVerdict_cansancio() {
-  await agentSay('Procesando lo que me contaste...', 700);
-  await new Promise(r => setTimeout(r, 900));
-  
-  const s = userContext.sueno;
-  const e = userContext.entrenamiento_ayer;
-  
-  if (s === 'sueno_malo' && (e === 'cancha' || e === 'gym' || e === 'doble')) {
-    showVerdict({
-      status: 'stop',
-      label: 'Rojo · Descanso activo',
-      title: 'Hoy no.',
-      reasoning: 'Dormiste mal después de una sesión demandante. Eso es el cóctel exacto donde ocurren <strong>el 70% de las lesiones amateur evitables</strong>. Tu sistema nervioso central no procesó la carga. Entrenar fuerte hoy no te hace más fuerte, te roba la semana que viene.',
-      actions: [
-        { text: 'Caminata 30-40 min al aire libre' },
-        { text: 'Movilidad suave de caderas y espalda alta' },
-        { text: 'Comida real y priorizá dormir hoy 8hs+' },
-        { text: 'Gym pesado o cancha', avoid: true },
-        { text: 'Cardio intenso', avoid: true },
-        { text: 'Sentirte culpable. Esto ES entrenamiento', avoid: true }
-      ]
-    });
-  }
-  else if (s === 'sueno_regular') {
-    showVerdict({
-      status: 'caution',
-      label: 'Amarillo · Ajustá la carga',
-      title: 'Entrená, pero liviano.',
-      reasoning: 'Sueño regular + cansancio = señal de que tu recuperación está pidiendo oxígeno. No es para parar, pero sí para <strong>bajar intensidad a un 60-70%</strong>. La clave hoy es mover el cuerpo sin acumular más fatiga.',
-      actions: [
-        { text: 'Técnica, movilidad, trabajo liviano' },
-        { text: 'Cardio zona 2 (podés hablar mientras)' },
-        { text: 'Comida: priorizá carbos de calidad' },
-        { text: 'Series al fallo', avoid: true },
-        { text: 'Pesos máximos', avoid: true }
-      ]
-    });
-  }
-  else {
-    showVerdict({
-      status: 'caution',
-      label: 'Amarillo · Escuchá más',
-      title: 'Activá y reevaluá.',
-      reasoning: 'Dormiste bien pero amaneciste cansado. Eso puede ser <strong>fatiga acumulada, estrés o simplemente un mal día</strong>. Hacé un calentamiento completo y decidimos en 10 minutos si el cuerpo responde.',
-      actions: [
-        { text: '15 min de calentamiento real' },
-        { text: 'Si en las primeras series se siente pesado → bajá' },
-        { text: 'Si arrancás y se acomoda → seguí normal' },
-        { text: 'Forzar la sesión sin escuchar', avoid: true }
-      ]
-    });
-  }
-  
-  await postVerdictOptions();
-}
-
-async function deliverVerdict_dolor() {
-  await agentSay('Déjame pensarlo bien...', 700);
-  await new Promise(r => setTimeout(r, 900));
-  
-  const zona = userContext.zona_dolor;
-  const intensidad = userContext.intensidad_dolor;
-  const contexto = userContext.contexto_dolor;
-  
-  // Señal roja: dolor fuerte o durante movimiento
-  if (intensidad === 'dolor_fuerte' || contexto === 'durante_mov') {
-    showVerdict({
-      status: 'stop',
-      label: 'Rojo · Consultá profesional',
-      title: 'Esto supera mi alcance.',
-      reasoning: 'Dolor fuerte o aparecido durante un movimiento específico puede ser <strong>lesión estructural</strong>. Yo te ayudo con fatiga, sobrecarga y manejo inteligente, pero esto requiere ojos y manos expertas. No es exagerar, es ser estratégico.',
-      actions: [
-        { text: 'Agendá turno con kinesiólogo deportivo' },
-        { text: 'Hasta entonces: reposo de la zona afectada' },
-        { text: 'Podés mover el resto del cuerpo sin comprometer esa zona' },
-        { text: 'Antiinflamatorios sin prescripción', avoid: true },
-        { text: 'Entrenar para "ver si aguanta"', avoid: true },
-        { text: 'Esperar a ver si pasa solo', avoid: true }
-      ]
-    });
-  }
-  // Tobillo post entrenamiento, leve/medio → caso típico
-  else if (zona === 'dolor_tobillo' && contexto === 'post_ent') {
-    showVerdict({
-      status: 'caution',
-      label: 'Amarillo · Sobrecarga manejable',
-      title: 'Sobrecarga de tobillo. Manejable.',
-      reasoning: 'Dolor de tobillo post-cancha o post-entrenamiento de impacto es casi siempre <strong>sobrecarga articular, no lesión</strong>. El cuerpo te está diciendo: "calenté poco, trabajé mucho, hace días que no movilizás esta zona". La respuesta no es hielo, es movimiento inteligente.',
-      actions: [
-        { text: 'Movilidad de tobillo: círculos + flexiones 3x10' },
-        { text: 'Fortalecimiento: elevación de talón + punta 3x15' },
-        { text: 'Activación antes de cualquier entrenamiento (no negociable)' },
-        { text: 'Hoy: evitá impacto repetido. Gym tren superior ok' },
-        { text: 'Hielo (solo si hay inflamación visible)', avoid: true },
-        { text: 'Antiinflamatorios de rutina', avoid: true },
-        { text: 'Saltar la movilidad "porque no tenés tiempo"', avoid: true }
-      ]
-    });
-  }
-  // Casos generales con intensidad leve
-  else if (intensidad === 'dolor_leve') {
-    showVerdict({
-      status: 'caution',
-      label: 'Amarillo · Ojo con la zona',
-      title: 'Molestia menor. Prevenir ahora.',
-      reasoning: 'Una molestia leve es <strong>el mejor momento para actuar</strong>. Hoy es una señal, en una semana puede ser una lesión. La diferencia entre atletas que duran y los que se rompen es qué hacen con estas señales tempranas.',
-      actions: [
-        { text: 'Movilidad específica de la zona 2 veces hoy' },
-        { text: 'Entrenamiento general ok, evitando esa zona' },
-        { text: 'Observá si mañana mejora, se mantiene o empeora' },
-        { text: 'Si empeora 48h → kine', avoid: false },
-        { text: 'Cargar esa zona "para ver si pasa"', avoid: true }
-      ]
-    });
-  }
-  else {
-    showVerdict({
-      status: 'caution',
-      label: 'Amarillo · Atención',
-      title: 'Señal que no hay que ignorar.',
-      reasoning: 'Un dolor de intensidad media post-entrenamiento merece <strong>pausa estratégica</strong>, no pánico. Vamos a gestionarlo con cabeza: 24-48hs de observación activa con movilidad, y reevaluamos.',
-      actions: [
-        { text: 'Movilidad de la zona afectada 3 veces al día' },
-        { text: 'Evitá cargar esa zona por 48hs' },
-        { text: 'Podés entrenar el resto del cuerpo' },
-        { text: 'Si en 48hs no mejora → kinesiólogo' },
-        { text: 'Forzar la zona para "probarla"', avoid: true }
-      ]
-    });
-  }
-  
-  await postVerdictOptions();
-}
-
-async function postVerdictOptions() {
-  conversationState = 'post_verdict';
-  await new Promise(r => setTimeout(r, 600));
-  await agentSay('¿Alguna duda sobre el plan?', 800);
-  setQuickReplies([
-    { label: 'Sí, tengo dudas', value: 'dudas' },
-    { label: 'Está claro, gracias', value: 'listo' }
-  ]);
-}
-
-// ========== FREE TEXT HANDLING ==========
 input.addEventListener('input', () => {
-  sendBtn.disabled = input.value.trim() === '';
+  sendBtn.disabled = input.value.trim() === '' || isStreaming;
   input.style.height = 'auto';
   input.style.height = Math.min(input.scrollHeight, 100) + 'px';
 });
 
 input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
-  }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
 
 async function sendMessage() {
   const text = input.value.trim();
-  if (!text) return;
-  
-  addMessage(text, 'user');
+  if (!text || isStreaming) return;
   input.value = '';
   input.style.height = 'auto';
   sendBtn.disabled = true;
-  input.placeholder = 'Contame cómo estás...';
-  
-  // Respuesta genérica para texto libre (esto será reemplazado por API de Claude)
-  await new Promise(r => setTimeout(r, 800));
-  await agentSay('Buena pregunta. En esta versión prototipo estoy siguiendo un guión estructurado, pero pronto voy a poder responder cualquier cosa que me preguntes con contexto real.', 1200);
-  await agentSay('Por ahora, si querés volver a empezar el check-in, tocá el ícono de refrescar arriba a la derecha.', 1000);
+  renderUserMessage(text);
+  await callAgent(text);
 }
 
+const hadHistory = loadHistory();
+if (hadHistory && messageHistory.length > 0) {
+  document.getElementById('onboarding').classList.add('hidden');
+  restoreVisualHistory();
+}
 </script>
 
 </body>
