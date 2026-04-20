@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sport Agent">
+<meta name="theme-color" content="#0a0a0a">
+<title>Sport Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --bg-elevated: #141414;
+  --bg-input: #1a1a1a;
+  --surface: #1f1f1f;
+  --border: #2a2a2a;
+  --text: #f4f1ec;
+  --text-dim: #8a8680;
+  --text-faint: #55524e;
+  --accent: #ff5722;
+  --accent-dim: #c2410c;
+  --green: #84cc16;
+  --yellow: #eab308;
+  --red: #ef4444;
+  --display: 'Fraunces', Georgia, serif;
+  --body: 'Work Sans', -apple-system, sans-serif;
+  --sans-modern: 'Inter', -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--sans-modern); -webkit-font-smoothing: antialiased; }
+.app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; max-width: 520px; margin: 0 auto; background: var(--bg); position: relative; }
+
+/* HEADER */
+.header { padding: max(env(safe-area-inset-top), 16px) 20px 14px; border-bottom: 1px solid var(--border); background: rgba(10,10,10,0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; align-items: center; gap: 12px; z-index: 10; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%); display: flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 700; font-size: 18px; color: #0a0a0a; position: relative; flex-shrink: 0; }
+.avatar::after { content: ''; position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; border-radius: 50%; background: var(--green); border: 2px solid var(--bg); }
+.avatar.thinking::after { background: var(--yellow); animation: pulse 1s infinite; }
+.avatar.error::after { background: var(--red); }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.header-info { flex: 1; min-width: 0; }
+.header-name { font-family: var(--display); font-size: 17px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+.header-status { font-size: 11px; color: var(--text-dim); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+.header-menu { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+.header-menu:active { background: var(--surface); }
+.header-menu svg { stroke: var(--text-dim); }
+
+/* CONVERSATION */
+.conversation { flex: 1; overflow-y: auto; padding: 20px 16px 8px; display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth; }
+.conversation::-webkit-scrollbar { width: 0; }
+.day-marker { align-self: center; font-family: var(--mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.15em; padding: 6px 12px; margin: 8px 0; }
+.msg { max-width: 85%; animation: msgIn 0.3s ease-out; }
+@keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.msg-agent { align-self: flex-start; }
+.msg-user { align-self: flex-end; }
+.msg-bubble { padding: 12px 16px; border-radius: 18px; font-size: 15px; line-height: 1.5; word-wrap: break-word; white-space: pre-wrap; font-family: var(--sans-modern); font-weight: 400; }
+.msg-agent .msg-bubble { background: var(--bg-elevated); border: 1px solid var(--border); border-bottom-left-radius: 6px; color: var(--text); }
+.msg-user .msg-bubble { background: var(--accent); color: #0a0a0a; border-bottom-right-radius: 6px; font-weight: 500; }
+.msg-bubble strong { font-weight: 600; color: var(--text); }
+.msg-time { font-size: 10px; color: var(--text-faint); font-family: var(--mono); margin-top: 4px; padding: 0 6px; }
+.msg-user .msg-time { text-align: right; }
+.msg-error .msg-bubble { background: rgba(239,68,68,0.1); border-color: var(--red); color: var(--red); }
+
+/* VERDICT CARD C2 - Medidor + Barras */
+.verdict-c2 { align-self: stretch; max-width: 100%; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin: 8px 0; animation: verdictIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); font-family: var(--sans-modern); }
+@keyframes verdictIn { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+.v-num { font-family: var(--sans-modern); font-weight: 200; letter-spacing: -0.05em; }
+.v-label { font-family: var(--mono); letter-spacing: 0.12em; text-transform: uppercase; }
+
+.v-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.v-status-pill { display: flex; align-items: center; gap: 8px; }
+.v-status-dot { width: 8px; height: 8px; border-radius: 50%; }
+.v-status-dot.go { background: var(--green); box-shadow: 0 0 10px var(--green); }
+.v-status-dot.caution { background: var(--yellow); box-shadow: 0 0 10px var(--yellow); }
+.v-status-dot.stop { background: var(--red); box-shadow: 0 0 10px var(--red); }
+.v-status-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text); }
+.v-timestamp { font-family: var(--mono); font-size: 9px; color: var(--text-faint); letter-spacing: 0.08em; }
+
+.v-gauge-container { position: relative; margin: 0 -4px 8px; }
+.v-gauge-svg { width: 100%; height: 140px; display: block; }
+
+.v-title { text-align: center; font-family: var(--sans-modern); font-size: 20px; font-weight: 400; color: var(--text); line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 22px; padding: 0 8px; }
+
+.v-bars { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+.v-bar-item { }
+.v-bar-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.v-bar-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+.v-bar-value { font-family: var(--sans-modern); font-weight: 200; font-size: 14px; color: var(--text); letter-spacing: -0.03em; }
+.v-bar-value .unit { color: var(--text-faint); font-size: 10px; }
+.v-bar-track { height: 4px; background: #1a1a1a; border-radius: 2px; overflow: hidden; }
+.v-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease-out; }
+
+.v-actions-grid { display: flex; justify-content: space-between; gap: 8px; padding-top: 14px; border-top: 1px solid var(--border); }
+.v-action-cell { flex: 1; text-align: center; }
+.v-action-icon { font-family: var(--sans-modern); font-size: 18px; font-weight: 200; line-height: 1; }
+.v-action-icon.do { color: var(--green); }
+.v-action-icon.avoid { color: var(--text-faint); }
+.v-action-label { font-family: var(--mono); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-top: 4px; line-height: 1.3; }
+
+.v-reasoning { padding: 14px 0; border-top: 1px solid var(--border); margin-top: 14px; font-size: 13px; line-height: 1.55; color: var(--text-dim); }
+.v-reasoning strong { color: var(--text); font-weight: 500; }
+
+/* TYPING / STREAMING */
+.typing { align-self: flex-start; background: var(--bg-elevated); border: 1px solid var(--border); padding: 14px 18px; border-radius: 18px 18px 18px 6px; display: flex; gap: 4px; }
+.typing span { width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim); animation: typingPulse 1.4s infinite; }
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingPulse { 0%,60%,100% { opacity: 0.3; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+.streaming-cursor { display: inline-block; width: 8px; height: 14px; background: var(--accent); margin-left: 2px; animation: blink 0.8s infinite; vertical-align: text-bottom; }
+@keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
+
+/* INPUT */
+.input-zone { padding: 10px 12px max(env(safe-area-inset-bottom), 12px); border-top: 1px solid var(--border); background: var(--bg); }
+.input-wrap { display: flex; align-items: flex-end; gap: 8px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 22px; padding: 4px 4px 4px 16px; transition: border-color 0.2s; }
+.input-wrap:focus-within { border-color: var(--accent); }
+.input-field { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-family: var(--sans-modern); font-size: 15px; padding: 10px 0; resize: none; max-height: 100px; min-height: 24px; line-height: 1.4; }
+.input-field::placeholder { color: var(--text-faint); }
+.send-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: var(--accent); color: #0a0a0a; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: transform 0.15s, opacity 0.2s; }
+.send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.send-btn:not(:disabled):active { transform: scale(0.92); }
+
+/* ONBOARDING */
+.onboarding { position: absolute; inset: 0; background: var(--bg); z-index: 20; display: flex; flex-direction: column; padding: max(env(safe-area-inset-top), 40px) 28px max(env(safe-area-inset-bottom), 28px); animation: fadeIn 0.4s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.onboarding-mark { font-family: var(--mono); font-size: 10px; letter-spacing: 0.25em; color: var(--text-dim); text-transform: uppercase; margin-bottom: auto; padding-top: 20px; }
+.onboarding-title { font-family: var(--display); font-size: 44px; font-weight: 400; line-height: 1; letter-spacing: -0.03em; margin-bottom: 16px; }
+.onboarding-title em { font-style: italic; color: var(--accent); font-weight: 300; }
+.onboarding-sub { font-size: 16px; line-height: 1.55; color: var(--text-dim); margin-bottom: 40px; max-width: 340px; }
+.onboarding-points { list-style: none; margin-bottom: 40px; display: flex; flex-direction: column; gap: 14px; }
+.onboarding-points li { display: flex; gap: 14px; font-size: 14px; line-height: 1.5; color: var(--text); }
+.onboarding-points li span { font-family: var(--mono); font-size: 11px; color: var(--accent); padding-top: 2px; min-width: 20px; }
+.onboarding-cta { padding: 16px; background: var(--text); color: var(--bg); border: none; border-radius: 100px; font-family: var(--sans-modern); font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.15s; }
+.onboarding-cta:active { transform: scale(0.98); }
+.onboarding-fine { font-family: var(--mono); font-size: 10px; color: var(--text-faint); text-align: center; margin-top: 16px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="onboarding" id="onboarding">
+    <div class="onboarding-mark">Sport Agent · v0.3</div>
+    <h1 class="onboarding-title">Tu cuerpo<br>te habla.<br><em>Yo traduzco.</em></h1>
+    <p class="onboarding-sub">Tu entrenador de bolsillo con criterio real. Te pregunta, te lee, te dice qué hacer hoy.</p>
+    <ul class="onboarding-points">
+      <li><span>01</span><div>Cuéntame cómo estás, qué hiciste ayer, qué te duele.</div></li>
+      <li><span>02</span><div>Te analizo como un kine, un entrenador y un fisio juntos.</div></li>
+      <li><span>03</span><div>Te digo si entrenar, bajar carga o parar. Con razones claras.</div></li>
+    </ul>
+    <button class="onboarding-cta" onclick="startChat()">Empezar check-in</button>
+    <div class="onboarding-fine">Prototipo personal · No reemplaza diagnóstico médico</div>
+  </div>
+
+  <div class="header">
+    <div class="avatar" id="avatar">SA</div>
+    <div class="header-info">
+      <div class="header-name">Sport Agent</div>
+      <div class="header-status" id="headerStatus">● En línea</div>
+    </div>
+    <div class="header-menu" onclick="resetChat()" title="Reiniciar conversación">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round">
+        <path d="M3 12a9 9 0 1 0 9-9"/>
+        <path d="M3 4v5h5"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="conversation" id="conversation">
+    <div class="day-marker" id="dayMarker">Hoy</div>
+  </div>
+
+  <div class="input-zone">
+    <div class="input-wrap">
+      <textarea class="input-field" id="inputField" placeholder="Cuéntame cómo estás..." rows="1"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()" disabled>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <path d="M5 12h14M13 6l6 6-6 6"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ========== CONFIG ==========
+const WORKER_URL = 'https://sport-agent-api.a-ardizzir.workers.dev';
+
+// ========== STATE ==========
+let messageHistory = [];
+let isStreaming = false;
+const STORAGE_KEY = 'sport_agent_history_v1';
+
+const conversation = document.getElementById('conversation');
+const input = document.getElementById('inputField');
+const sendBtn = document.getElementById('sendBtn');
+const avatar = document.getElementById('avatar');
+const headerStatus = document.getElementById('headerStatus');
+
+// ========== PERSISTENCE ==========
+function saveHistory() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(messageHistory)); } catch (e) {}
+}
+
+function loadHistory() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) { messageHistory = JSON.parse(saved); return true; }
+  } catch (e) {}
+  return false;
+}
+
+// ========== HELPERS ==========
+function getTime() {
+  const d = new Date();
+  return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+}
+
+function getDateLabel() {
+  const d = new Date();
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${d.getDate()} ${meses[d.getMonth()]}`.toUpperCase();
+}
+
+function scrollToBottom(smooth = true) {
+  setTimeout(() => {
+    conversation.scrollTo({ top: conversation.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+  }, 50);
+}
+
+function setAgentState(state) {
+  avatar.classList.remove('thinking', 'error');
+  if (state === 'thinking') { avatar.classList.add('thinking'); headerStatus.textContent = '● Pensando...'; }
+  else if (state === 'error') { avatar.classList.add('error'); headerStatus.textContent = '● Error de conexión'; }
+  else { headerStatus.textContent = '● En línea'; }
+}
+
+function formatText(text) {
+  return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+}
+
+function escapeHtml(str) {
+  return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+}
+
+function renderUserMessage(text) {
+  const msg = document.createElement('div');
+  msg.className = 'msg msg-user';
+  msg.innerHTML = `<div class="msg-bubble">${escapeHtml(text)}</div><div class="msg-time">${getTime()}</div>`;
+  conversation.appendChild(msg);
+  scrollToBottom();
+}
+
+function createAgentBubble() {
+  const msg = document.createElement('div');
+  msg.className = 'msg msg-agent';
+  msg.innerHTML = `<div class="msg-bubble"><span class="msg-content"></span><span class="streaming-cursor"></span></div><div class="msg-time">${getTime()}</div>`;
+  conversation.appendChild(msg);
+  scrollToBottom();
+  return { container: msg, content: msg.querySelector('.msg-content'), cursor: msg.querySelector('.streaming-cursor') };
+}
+
+function showTypingDots() {
+  const t = document.createElement('div');
+  t.className = 'typing';
+  t.id = 'typingIndicator';
+  t.innerHTML = '<span></span><span></span><span></span>';
+  conversation.appendChild(t);
+  scrollToBottom();
+}
+
+function removeTypingDots() {
+  const t = document.getElementById('typingIndicator');
+  if (t) t.remove();
+}
+
+function renderError(message) {
+  const msg = document.createElement('div');
+  msg.className = 'msg msg-agent msg-error';
+  msg.innerHTML = `<div class="msg-bubble">⚠ ${escapeHtml(message)}</div><div class="msg-time">${getTime()}</div>`;
+  conversation.appendChild(msg);
+  scrollToBottom();
+}
+
+// ========== VERDICT CARD C2 (MODULAR) ==========
+// Esta función es reutilizable: recibe un objeto de datos y renderiza la card.
+// Puede usarse en el chat o en una pestaña futura de historial.
+function renderVerdictCardC2(data, parentEl = conversation) {
+  const statusColors = {
+    go: { main: '#84cc16', label: 'Luz verde' },
+    caution: { main: '#eab308', label: 'Luz amarilla' },
+    stop: { main: '#ef4444', label: 'Luz roja' }
+  };
+  const colorSet = statusColors[data.status] || statusColors.caution;
+  const mainColor = colorSet.main;
+
+  // Calcular el arco del gauge (semicírculo de 0 a 100%)
+  const gaugeLength = 408.4; // circunferencia del arco del medidor
+  const gaugeOffset = gaugeLength * (1 - (data.intensity_percent || 0) / 100);
+
+  const loadWidth = Math.min(100, Math.max(0, data.load_percent || 0));
+  const riskWidth = Math.min(100, Math.max(0, data.risk_percent || 0));
+
+  // Color semántico del load bar (más alto = más peligro)
+  const loadColor = loadWidth > 75 ? '#ef4444' : loadWidth > 50 ? '#ff5722' : loadWidth > 30 ? '#eab308' : '#84cc16';
+  // Color semántico del risk bar
+  const riskColor = riskWidth > 75 ? '#ef4444' : riskWidth > 50 ? '#ff5722' : riskWidth > 25 ? '#eab308' : '#84cc16';
+
+  // Procesar items do/avoid - máximo 4 en total, priorizando 2 do + 2 avoid
+  const doItems = (data.do_items || []).slice(0, 2);
+  const avoidItems = (data.avoid_items || []).slice(0, 2);
+
+  const actionsHtml = [
+    ...doItems.map(item => `
+      <div class="v-action-cell">
+        <div class="v-action-icon do">✓</div>
+        <div class="v-action-label">${escapeHtml(item.length > 12 ? item.substring(0, 12) + '…' : item)}</div>
+      </div>
+    `),
+    ...avoidItems.map(item => `
+      <div class="v-action-cell">
+        <div class="v-action-icon avoid">✕</div>
+        <div class="v-action-label">${escapeHtml(item.length > 12 ? item.substring(0, 12) + '…' : item)}</div>
+      </div>
+    `)
+  ].join('');
+
+  const card = document.createElement('div');
+  card.className = 'verdict-c2';
+  card.innerHTML = `
+    <div class="v-header">
+      <div class="v-status-pill">
+        <div class="v-status-dot ${data.status}"></div>
+        <span class="v-status-label">${escapeHtml(colorSet.label)}</span>
+      </div>
+      <span class="v-timestamp">${getDateLabel()} · ${getTime()}</span>
+    </div>
+
+    <div class="v-gauge-container">
+      <svg class="v-gauge-svg" viewBox="0 0 320 140" preserveAspectRatio="xMidYMid meet">
+        <path d="M 30 120 A 130 130 0 0 1 290 120" fill="none" stroke="#1a1a1a" stroke-width="14" stroke-linecap="round"/>
+        <path d="M 30 120 A 130 130 0 0 1 290 120" fill="none" stroke="${mainColor}" stroke-width="14" stroke-linecap="round" stroke-dasharray="${gaugeLength}" stroke-dashoffset="${gaugeOffset}"/>
+        <text x="160" y="88" text-anchor="middle" class="v-num" font-size="76" fill="#f4f1ec">${Math.round(data.intensity_percent || 0)}</text>
+        <text x="222" y="88" class="v-num" font-size="28" fill="#55524e" font-weight="300">%</text>
+        <text x="160" y="115" text-anchor="middle" class="v-label" font-size="9" fill="#8a8680">INTENSIDAD HOY</text>
+        <text x="30" y="138" text-anchor="middle" class="v-label" font-size="8" fill="#55524e">0</text>
+        <text x="290" y="138" text-anchor="middle" class="v-label" font-size="8" fill="#55524e">100</text>
+      </svg>
+    </div>
+
+    <div class="v-title">${escapeHtml(data.title || '')}</div>
+
+    <div class="v-bars">
+      <div class="v-bar-item">
+        <div class="v-bar-row">
+          <span class="v-bar-label">Carga semanal</span>
+          <span class="v-bar-value">${Math.round(data.load_percent || 0)}<span class="unit">%</span></span>
+        </div>
+        <div class="v-bar-track"><div class="v-bar-fill" style="width: ${loadWidth}%; background: ${loadColor};"></div></div>
+      </div>
+      <div class="v-bar-item">
+        <div class="v-bar-row">
+          <span class="v-bar-label">Riesgo lesión</span>
+          <span class="v-bar-value">${Math.round(data.risk_percent || 0)}<span class="unit">%</span></span>
+        </div>
+        <div class="v-bar-track"><div class="v-bar-fill" style="width: ${riskWidth}%; background: ${riskColor};"></div></div>
+      </div>
+      ${data.volume_delta ? `
+      <div class="v-bar-item">
+        <div class="v-bar-row">
+          <span class="v-bar-label">Volumen vs. plan</span>
+          <span class="v-bar-value">${escapeHtml(data.volume_delta)}</span>
+        </div>
+      </div>
+      ` : ''}
+    </div>
+
+    ${actionsHtml ? `<div class="v-actions-grid">${actionsHtml}</div>` : ''}
+
+    ${data.reasoning ? `<div class="v-reasoning">${formatText(data.reasoning)}</div>` : ''}
+  `;
+  parentEl.appendChild(card);
+  scrollToBottom();
+}
+
+// ========== RESPONSE PROCESSING ==========
+function processCompleteResponse(fullText, agentBubble) {
+  const verdictRegex = /<<<VERDICT\s*([\s\S]*?)\s*VERDICT>>>/;
+  const match = fullText.match(verdictRegex);
+  
+  if (match) {
+    const beforeText = fullText.substring(0, match.index).trim();
+    const afterText = fullText.substring(match.index + match[0].length).trim();
+    const jsonStr = match[1].trim();
+    
+    try {
+      const verdictData = JSON.parse(jsonStr);
+      
+      if (beforeText) {
+        agentBubble.content.innerHTML = formatText(beforeText);
+        agentBubble.cursor.remove();
+      } else {
+        agentBubble.container.remove();
+      }
+      
+      renderVerdictCardC2(verdictData);
+      
+      if (afterText) {
+        const afterBubble = createAgentBubble();
+        afterBubble.content.innerHTML = formatText(afterText);
+        afterBubble.cursor.remove();
+      }
+      
+      return fullText;
+    } catch (e) {
+      console.warn('No se pudo parsear VERDICT JSON:', e);
+      agentBubble.content.innerHTML = formatText(fullText);
+      agentBubble.cursor.remove();
+    }
+  } else {
+    agentBubble.content.innerHTML = formatText(fullText);
+    agentBubble.cursor.remove();
+  }
+  return fullText;
+}
+
+// ========== API CALL ==========
+async function callAgent(userMessage) {
+  messageHistory.push({ role: 'user', content: userMessage });
+  setAgentState('thinking');
+  isStreaming = true;
+  sendBtn.disabled = true;
+  showTypingDots();
+  
+  let agentBubble = null;
+  let fullText = '';
+  
+  try {
+    const response = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: messageHistory }),
+    });
+    
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || `Error ${response.status}`);
+    }
+    
+    removeTypingDots();
+    agentBubble = createAgentBubble();
+    
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (!data || data === '[DONE]') continue;
+        try {
+          const event = JSON.parse(data);
+          if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+            const chunk = event.delta.text;
+            fullText += chunk;
+            if (!fullText.includes('<<<VERDICT')) {
+              agentBubble.content.innerHTML = formatText(fullText);
+              scrollToBottom(false);
+            } else {
+              const idx = fullText.indexOf('<<<VERDICT');
+              const visibleText = fullText.substring(0, idx).trim();
+              agentBubble.content.innerHTML = formatText(visibleText);
+              agentBubble.cursor.style.background = 'var(--yellow)';
+            }
+          }
+        } catch (e) {}
+      }
+    }
+    
+    processCompleteResponse(fullText, agentBubble);
+    messageHistory.push({ role: 'assistant', content: fullText });
+    saveHistory();
+    setAgentState('online');
+    
+  } catch (error) {
+    console.error('Error:', error);
+    removeTypingDots();
+    if (agentBubble) agentBubble.container.remove();
+    let errorMsg = 'No pude conectar con el agente. ';
+    if (error.message.includes('Failed to fetch')) errorMsg += 'Revisa tu conexión a internet.';
+    else errorMsg += error.message;
+    renderError(errorMsg);
+    setAgentState('error');
+    messageHistory.pop();
+  } finally {
+    isStreaming = false;
+    sendBtn.disabled = input.value.trim() === '';
+    input.focus();
+  }
+}
+
+// ========== FLOW ==========
+function startChat() {
+  document.getElementById('onboarding').classList.add('hidden');
+  if (messageHistory.length === 0) {
+    setTimeout(() => {
+      callAgent('[SISTEMA: El usuario acaba de abrir la app. Saluda brevemente variando la apertura según las opciones del system prompt, y haz tu primera pregunta del check-in del día.]');
+    }, 400);
+  } else {
+    restoreVisualHistory();
+  }
+}
+
+function restoreVisualHistory() {
+  for (const msg of messageHistory) {
+    if (msg.role === 'user' && !msg.content.startsWith('[SISTEMA:')) {
+      renderUserMessage(msg.content);
+    } else if (msg.role === 'assistant') {
+      const bubble = createAgentBubble();
+      processCompleteResponse(msg.content, bubble);
+    }
+  }
+}
+
+function resetChat() {
+  if (!confirm('¿Reiniciar conversación? Se borrará el historial.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  messageHistory = [];
+  conversation.innerHTML = '<div class="day-marker">Hoy</div>';
+  setTimeout(() => {
+    callAgent('[SISTEMA: El usuario reinició la conversación. Saluda brevemente variando la apertura y haz tu primera pregunta del check-in.]');
+  }, 300);
+}
+
+// ========== INPUT ==========
+input.addEventListener('input', () => {
+  sendBtn.disabled = input.value.trim() === '' || isStreaming;
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+});
+
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text || isStreaming) return;
+  input.value = '';
+  input.style.height = 'auto';
+  sendBtn.disabled = true;
+  renderUserMessage(text);
+  await callAgent(text);
+}
+
+// ========== INIT ==========
+const hadHistory = loadHistory();
+if (hadHistory && messageHistory.length > 0) {
+  document.getElementById('onboarding').classList.add('hidden');
+  restoreVisualHistory();
+}
+</script>
+
+</body>
+</html>
