@@ -238,9 +238,21 @@ html, body {
   letter-spacing: 0.2em;
 }
 
-/* Gauge con viewBox ampliado para evitar recorte */
-.v-gauge-container { position: relative; margin: 8px -2px 4px; text-align: center; }
-.v-gauge-svg { width: 100%; height: 160px; display: block; overflow: visible; }
+/* Gauge recentrado vertical y horizontalmente */
+.v-gauge-container {
+  position: relative;
+  margin: 20px 0 12px;
+  text-align: center;
+  padding: 0 10px;
+}
+.v-gauge-svg {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  overflow: visible;
+}
 
 .v-title {
   text-align: center;
@@ -300,7 +312,6 @@ html, body {
   flex: 1;
 }
 
-/* Acciones en 2 columnas con texto completo */
 .v-actions-section {
   padding-top: 14px;
   border-top: 1px solid var(--border);
@@ -410,7 +421,7 @@ html, body {
   outline: none;
   color: var(--text);
   font-family: var(--font);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 300;
   padding: 10px 0;
   resize: none;
@@ -534,7 +545,7 @@ html, body {
 <div class="app" id="app">
 
   <div class="onboarding" id="onboarding">
-    <div class="onboarding-mark">Sport Agent · v0.4.1</div>
+    <div class="onboarding-mark">Sport Agent · v0.4.2</div>
     <h1 class="onboarding-title">Tu cuerpo<br>te habla.<br><em>Yo traduzco.</em></h1>
     <p class="onboarding-sub">Tu entrenador de bolsillo con criterio real. Te pregunta, te lee, te dice qué hacer hoy.</p>
     <ul class="onboarding-points">
@@ -578,10 +589,8 @@ html, body {
 </div>
 
 <script>
-// ========== CONFIG ==========
 const WORKER_URL = 'https://sport-agent-api.a-ardizzir.workers.dev';
 
-// ========== STATE ==========
 let messageHistory = [];
 let isStreaming = false;
 const STORAGE_KEY = 'sport_agent_history_v1';
@@ -593,37 +602,38 @@ const sendBtn = document.getElementById('sendBtn');
 const avatar = document.getElementById('avatar');
 const headerStatus = document.getElementById('headerStatus');
 
-// ========== FIX AGRESIVO TECLADO iOS ==========
-// Setea la altura del app al visualViewport.height cuando el teclado aparece/desaparece
+// ========== FIX TECLADO iOS (mejor intento) ==========
 function updateAppHeight() {
-  if (window.visualViewport) {
-    const h = window.visualViewport.height;
-    document.documentElement.style.setProperty('--app-height', h + 'px');
-  } else {
-    document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
-  }
+  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty('--app-height', h + 'px');
 }
 
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', () => {
     updateAppHeight();
-    // Scroll a fondo cuando el teclado cambia
     requestAnimationFrame(() => {
       conversation.scrollTop = conversation.scrollHeight;
     });
   });
-  window.visualViewport.addEventListener('scroll', updateAppHeight);
 }
 window.addEventListener('resize', updateAppHeight);
+window.addEventListener('orientationchange', () => {
+  setTimeout(updateAppHeight, 200);
+});
 updateAppHeight();
 
-// Cuando el input recibe focus, forzar scroll y re-ajuste después de que el teclado aparezca
 input.addEventListener('focus', () => {
   setTimeout(() => {
     updateAppHeight();
     conversation.scrollTop = conversation.scrollHeight;
-    input.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, 300);
+});
+
+input.addEventListener('blur', () => {
+  setTimeout(() => {
+    updateAppHeight();
+    window.scrollTo(0, 0);
+  }, 100);
 });
 
 // ========== PERSISTENCE ==========
@@ -705,6 +715,7 @@ function renderError(message) {
 }
 
 // ========== VERDICT CARD ==========
+// viewBox 0 0 280 180 con medidor centrado
 function renderVerdictCardC2(data, parentEl = conversation) {
   const statusMap = {
     go: { color: '#D9F264', label: 'Luz verde' },
@@ -715,7 +726,6 @@ function renderVerdictCardC2(data, parentEl = conversation) {
   const mainColor = colorSet.color;
   const labelText = data.label || colorSet.label;
 
-  // Gauge con viewBox ampliado (0 0 320 170) para evitar recortes
   const gaugeLength = 408.4;
   const intensity = Math.max(0, Math.min(100, data.intensity_percent || 0));
   const gaugeOffset = gaugeLength * (1 - intensity / 100);
@@ -741,14 +751,14 @@ function renderVerdictCardC2(data, parentEl = conversation) {
     </div>
 
     <div class="v-gauge-container">
-      <svg class="v-gauge-svg" viewBox="0 0 320 170" preserveAspectRatio="xMidYMid meet" style="font-family: 'Outfit', sans-serif;">
-        <path d="M 30 140 A 130 130 0 0 1 290 140" fill="none" stroke="#1f2024" stroke-width="14" stroke-linecap="round"/>
-        <path d="M 30 140 A 130 130 0 0 1 290 140" fill="none" stroke="${mainColor}" stroke-width="14" stroke-linecap="round" stroke-dasharray="${gaugeLength}" stroke-dashoffset="${gaugeOffset}"/>
-        <text x="160" y="108" text-anchor="middle" font-family="Outfit, sans-serif" font-size="72" font-weight="200" fill="#f4f1ec" style="letter-spacing: -0.04em;">${Math.round(intensity)}</text>
-        <text x="218" y="108" font-family="Outfit, sans-serif" font-size="26" font-weight="300" fill="#55524e">%</text>
-        <text x="160" y="134" text-anchor="middle" font-family="Outfit, sans-serif" font-size="9" font-weight="500" fill="#8a8680" style="letter-spacing: 0.22em;">INTENSIDAD HOY</text>
-        <text x="30" y="162" text-anchor="middle" font-family="Outfit, sans-serif" font-size="8" font-weight="500" fill="#55524e" style="letter-spacing: 0.15em;">0</text>
-        <text x="290" y="162" text-anchor="middle" font-family="Outfit, sans-serif" font-size="8" font-weight="500" fill="#55524e" style="letter-spacing: 0.15em;">100</text>
+      <svg class="v-gauge-svg" viewBox="0 0 280 180" preserveAspectRatio="xMidYMid meet" style="font-family: 'Outfit', sans-serif;">
+        <path d="M 20 140 A 120 120 0 0 1 260 140" fill="none" stroke="#1f2024" stroke-width="14" stroke-linecap="round"/>
+        <path d="M 20 140 A 120 120 0 0 1 260 140" fill="none" stroke="${mainColor}" stroke-width="14" stroke-linecap="round" stroke-dasharray="${gaugeLength}" stroke-dashoffset="${gaugeOffset}"/>
+        <text x="140" y="112" text-anchor="middle" font-family="Outfit, sans-serif" font-size="68" font-weight="200" fill="#f4f1ec" style="letter-spacing: -0.04em;">${Math.round(intensity)}</text>
+        <text x="195" y="112" font-family="Outfit, sans-serif" font-size="24" font-weight="300" fill="#55524e">%</text>
+        <text x="140" y="136" text-anchor="middle" font-family="Outfit, sans-serif" font-size="9" font-weight="500" fill="#8a8680" style="letter-spacing: 0.22em;">INTENSIDAD HOY</text>
+        <text x="20" y="165" text-anchor="middle" font-family="Outfit, sans-serif" font-size="8" font-weight="500" fill="#55524e" style="letter-spacing: 0.15em;">0</text>
+        <text x="260" y="165" text-anchor="middle" font-family="Outfit, sans-serif" font-size="8" font-weight="500" fill="#55524e" style="letter-spacing: 0.15em;">100</text>
       </svg>
     </div>
 
@@ -820,7 +830,6 @@ function renderVerdictCardC2(data, parentEl = conversation) {
   scrollToBottom();
 }
 
-// ========== RESPONSE PROCESSING ==========
 function processCompleteResponse(fullText, agentBubble) {
   const verdictRegex = /<<<VERDICT\s*([\s\S]*?)\s*VERDICT>>>/;
   const match = fullText.match(verdictRegex);
@@ -857,7 +866,6 @@ function processCompleteResponse(fullText, agentBubble) {
   return fullText;
 }
 
-// ========== API CALL ==========
 async function callAgent(userMessage) {
   messageHistory.push({ role: 'user', content: userMessage });
   setAgentState('thinking');
@@ -937,7 +945,6 @@ async function callAgent(userMessage) {
   }
 }
 
-// ========== FLOW ==========
 function startChat() {
   document.getElementById('onboarding').classList.add('hidden');
   if (messageHistory.length === 0) {
@@ -970,7 +977,6 @@ function resetChat() {
   }, 300);
 }
 
-// ========== INPUT ==========
 input.addEventListener('input', () => {
   sendBtn.disabled = input.value.trim() === '' || isStreaming;
   input.style.height = 'auto';
@@ -991,7 +997,6 @@ async function sendMessage() {
   await callAgent(text);
 }
 
-// ========== INIT ==========
 const hadHistory = loadHistory();
 if (hadHistory && messageHistory.length > 0) {
   document.getElementById('onboarding').classList.add('hidden');
