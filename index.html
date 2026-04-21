@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Sport Agent">
@@ -27,6 +27,7 @@
   --yellow: #FFB800;
   --red: #FF4D4D;
   --font: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --app-height: 100dvh;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -40,17 +41,20 @@ html, body {
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  position: fixed;
+  width: 100%;
+  overscroll-behavior: none;
 }
 
 .app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  height: 100dvh;
+  height: var(--app-height);
   max-width: 520px;
   margin: 0 auto;
   background: var(--bg);
   position: relative;
+  overflow: hidden;
 }
 
 /* ========== HEADER ========== */
@@ -99,7 +103,6 @@ html, body {
 
 .header-info { flex: 1; min-width: 0; }
 .header-name {
-  font-family: var(--font);
   font-size: 15px;
   font-weight: 400;
   letter-spacing: 0.02em;
@@ -107,7 +110,6 @@ html, body {
   color: var(--text);
 }
 .header-status {
-  font-family: var(--font);
   font-size: 9px;
   font-weight: 500;
   color: var(--text-dim);
@@ -139,12 +141,12 @@ html, body {
   gap: 10px;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 .conversation::-webkit-scrollbar { width: 0; }
 
 .day-marker {
   align-self: center;
-  font-family: var(--font);
   font-weight: 500;
   font-size: 9px;
   color: var(--text-faint);
@@ -163,7 +165,6 @@ html, body {
 .msg-bubble {
   padding: 11px 15px;
   border-radius: 18px;
-  font-family: var(--font);
   font-size: 15px;
   line-height: 1.55;
   word-wrap: break-word;
@@ -188,7 +189,6 @@ html, body {
 .msg-bubble strong { font-weight: 500; color: var(--text); }
 
 .msg-time {
-  font-family: var(--font);
   font-size: 9px;
   font-weight: 500;
   color: var(--text-faint);
@@ -200,7 +200,7 @@ html, body {
 
 .msg-error .msg-bubble { background: rgba(255,77,77,0.1); border-color: var(--red); color: var(--red); }
 
-/* ========== VERDICT CARD C2 ========== */
+/* ========== VERDICT CARD ========== */
 .verdict {
   align-self: stretch;
   max-width: 100%;
@@ -225,7 +225,6 @@ html, body {
 .v-status-dot.caution { background: var(--yellow); box-shadow: 0 0 10px var(--yellow); }
 .v-status-dot.stop { background: var(--red); box-shadow: 0 0 10px var(--red); }
 .v-status-label {
-  font-family: var(--font);
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.22em;
@@ -233,19 +232,18 @@ html, body {
   text-transform: uppercase;
 }
 .v-timestamp {
-  font-family: var(--font);
   font-size: 9px;
   font-weight: 500;
   color: var(--text-faint);
   letter-spacing: 0.2em;
 }
 
-.v-gauge-container { position: relative; margin: 4px -2px 4px; text-align: center; }
-.v-gauge-svg { width: 100%; height: 135px; display: block; }
+/* Gauge con viewBox ampliado para evitar recorte */
+.v-gauge-container { position: relative; margin: 8px -2px 4px; text-align: center; }
+.v-gauge-svg { width: 100%; height: 160px; display: block; overflow: visible; }
 
 .v-title {
   text-align: center;
-  font-family: var(--font);
   font-size: 19px;
   font-weight: 300;
   color: var(--text);
@@ -258,7 +256,6 @@ html, body {
 .v-bars { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
 .v-bar-row { display: flex; justify-content: space-between; margin-bottom: 6px; align-items: baseline; }
 .v-bar-label {
-  font-family: var(--font);
   font-size: 9px;
   font-weight: 500;
   letter-spacing: 0.22em;
@@ -266,7 +263,6 @@ html, body {
   text-transform: uppercase;
 }
 .v-bar-value {
-  font-family: var(--font);
   font-weight: 300;
   font-size: 13px;
   color: var(--text);
@@ -288,7 +284,6 @@ html, body {
   gap: 12px;
 }
 .v-tip-label {
-  font-family: var(--font);
   font-size: 10px;
   font-weight: 500;
   color: var(--primary);
@@ -298,7 +293,6 @@ html, body {
   flex-shrink: 0;
 }
 .v-tip-text {
-  font-family: var(--font);
   font-size: 12px;
   font-weight: 300;
   line-height: 1.55;
@@ -306,49 +300,50 @@ html, body {
   flex: 1;
 }
 
-.v-actions-grid {
-  display: flex;
-  justify-content: space-between;
-  gap: 4px;
-  padding-top: 12px;
+/* Acciones en 2 columnas con texto completo */
+.v-actions-section {
+  padding-top: 14px;
   border-top: 1px solid var(--border);
 }
-.v-action-cell {
-  flex: 1;
-  text-align: center;
-  padding: 6px 2px;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: background 0.2s;
-  position: relative;
-  min-width: 0;
-}
-.v-action-cell:active { background: var(--surface-2); }
-.v-action-icon {
-  font-family: var(--font);
-  font-size: 18px;
-  font-weight: 300;
-  line-height: 1;
-}
-.v-action-icon.do { color: var(--green); }
-.v-action-icon.avoid { color: var(--red); }
-.v-action-label {
-  font-family: var(--font);
+.v-actions-title {
   font-size: 9px;
   font-weight: 500;
-  letter-spacing: 0.15em;
-  color: var(--text-dim);
+  letter-spacing: 0.22em;
+  color: var(--text-faint);
   text-transform: uppercase;
-  margin-top: 6px;
-  line-height: 1.3;
-  word-break: break-word;
+  margin-bottom: 10px;
 }
+.v-actions-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+  margin-bottom: 10px;
+}
+.v-action-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.3;
+  color: var(--text);
+}
+.v-action-item-icon {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 14px;
+  text-align: center;
+}
+.v-action-item-icon.do { color: var(--green); }
+.v-action-item-icon.avoid { color: var(--red); }
+.v-action-item.avoid { color: var(--text-dim); }
 
 .v-reasoning {
   padding: 14px 0 0;
   margin-top: 14px;
   border-top: 1px solid var(--border);
-  font-family: var(--font);
   font-weight: 300;
   font-size: 13px;
   line-height: 1.6;
@@ -442,39 +437,6 @@ html, body {
 .send-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .send-btn:not(:disabled):active { transform: scale(0.92); }
 
-/* ========== ACTION TOOLTIP ========== */
-.action-tooltip {
-  position: fixed;
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 10px;
-  padding: 10px 14px;
-  font-family: var(--font);
-  font-size: 13px;
-  font-weight: 300;
-  color: var(--text);
-  max-width: 260px;
-  z-index: 100;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  line-height: 1.4;
-}
-.action-tooltip.visible { opacity: 1; }
-.action-tooltip::before {
-  content: '';
-  position: absolute;
-  bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%) rotate(45deg);
-  width: 10px;
-  height: 10px;
-  background: var(--surface);
-  border-right: 1px solid var(--border-strong);
-  border-bottom: 1px solid var(--border-strong);
-}
-
 /* ========== ONBOARDING ========== */
 .onboarding {
   position: absolute;
@@ -489,7 +451,6 @@ html, body {
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .onboarding-mark {
-  font-family: var(--font);
   font-weight: 500;
   font-size: 10px;
   letter-spacing: 0.28em;
@@ -499,7 +460,6 @@ html, body {
   padding-top: 20px;
 }
 .onboarding-title {
-  font-family: var(--font);
   font-size: 44px;
   font-weight: 300;
   line-height: 1.05;
@@ -512,7 +472,6 @@ html, body {
   font-weight: 300;
 }
 .onboarding-sub {
-  font-family: var(--font);
   font-size: 15px;
   font-weight: 300;
   line-height: 1.55;
@@ -530,14 +489,12 @@ html, body {
 .onboarding-points li {
   display: flex;
   gap: 14px;
-  font-family: var(--font);
   font-size: 14px;
   font-weight: 300;
   line-height: 1.5;
   color: var(--text);
 }
 .onboarding-points li span {
-  font-family: var(--font);
   font-size: 10px;
   font-weight: 500;
   color: var(--primary);
@@ -560,7 +517,6 @@ html, body {
 }
 .onboarding-cta:active { transform: scale(0.98); }
 .onboarding-fine {
-  font-family: var(--font);
   font-weight: 500;
   font-size: 9px;
   color: var(--text-faint);
@@ -575,10 +531,10 @@ html, body {
 </head>
 <body>
 
-<div class="app">
+<div class="app" id="app">
 
   <div class="onboarding" id="onboarding">
-    <div class="onboarding-mark">Sport Agent · v0.4</div>
+    <div class="onboarding-mark">Sport Agent · v0.4.1</div>
     <h1 class="onboarding-title">Tu cuerpo<br>te habla.<br><em>Yo traduzco.</em></h1>
     <p class="onboarding-sub">Tu entrenador de bolsillo con criterio real. Te pregunta, te lee, te dice qué hacer hoy.</p>
     <ul class="onboarding-points">
@@ -621,8 +577,6 @@ html, body {
 
 </div>
 
-<div class="action-tooltip" id="actionTooltip"></div>
-
 <script>
 // ========== CONFIG ==========
 const WORKER_URL = 'https://sport-agent-api.a-ardizzir.workers.dev';
@@ -632,29 +586,45 @@ let messageHistory = [];
 let isStreaming = false;
 const STORAGE_KEY = 'sport_agent_history_v1';
 
+const app = document.getElementById('app');
 const conversation = document.getElementById('conversation');
 const input = document.getElementById('inputField');
 const sendBtn = document.getElementById('sendBtn');
 const avatar = document.getElementById('avatar');
 const headerStatus = document.getElementById('headerStatus');
-const tooltip = document.getElementById('actionTooltip');
 
-// ========== FIX iOS KEYBOARD (visualViewport) ==========
-// Ajusta el layout para que el chat no se oculte cuando aparece el teclado
-function handleViewportResize() {
-  if (!window.visualViewport) return;
-  const vv = window.visualViewport;
-  const heightDiff = window.innerHeight - vv.height;
-  document.documentElement.style.setProperty('--keyboard-offset', heightDiff + 'px');
-  // Scroll al fondo cuando aparece teclado
-  if (heightDiff > 100) {
-    setTimeout(() => conversation.scrollTo({ top: conversation.scrollHeight, behavior: 'smooth' }), 100);
+// ========== FIX AGRESIVO TECLADO iOS ==========
+// Setea la altura del app al visualViewport.height cuando el teclado aparece/desaparece
+function updateAppHeight() {
+  if (window.visualViewport) {
+    const h = window.visualViewport.height;
+    document.documentElement.style.setProperty('--app-height', h + 'px');
+  } else {
+    document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
   }
 }
+
 if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', handleViewportResize);
-  window.visualViewport.addEventListener('scroll', handleViewportResize);
+  window.visualViewport.addEventListener('resize', () => {
+    updateAppHeight();
+    // Scroll a fondo cuando el teclado cambia
+    requestAnimationFrame(() => {
+      conversation.scrollTop = conversation.scrollHeight;
+    });
+  });
+  window.visualViewport.addEventListener('scroll', updateAppHeight);
 }
+window.addEventListener('resize', updateAppHeight);
+updateAppHeight();
+
+// Cuando el input recibe focus, forzar scroll y re-ajuste después de que el teclado aparezca
+input.addEventListener('focus', () => {
+  setTimeout(() => {
+    updateAppHeight();
+    conversation.scrollTop = conversation.scrollHeight;
+    input.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, 300);
+});
 
 // ========== PERSISTENCE ==========
 function saveHistory() {
@@ -734,25 +704,7 @@ function renderError(message) {
   scrollToBottom();
 }
 
-// ========== TOOLTIP PARA ACCIONES ==========
-let tooltipTimeout = null;
-function showTooltip(text, anchor) {
-  clearTimeout(tooltipTimeout);
-  tooltip.textContent = text;
-  tooltip.classList.add('visible');
-  const rect = anchor.getBoundingClientRect();
-  const tipRect = tooltip.getBoundingClientRect();
-  let left = rect.left + rect.width / 2 - tipRect.width / 2;
-  left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
-  tooltip.style.left = left + 'px';
-  tooltip.style.top = (rect.top - tipRect.height - 12) + 'px';
-  tooltipTimeout = setTimeout(hideTooltip, 3000);
-}
-function hideTooltip() {
-  tooltip.classList.remove('visible');
-}
-
-// ========== VERDICT CARD C2 (MODULAR) ==========
+// ========== VERDICT CARD ==========
 function renderVerdictCardC2(data, parentEl = conversation) {
   const statusMap = {
     go: { color: '#D9F264', label: 'Luz verde' },
@@ -763,7 +715,7 @@ function renderVerdictCardC2(data, parentEl = conversation) {
   const mainColor = colorSet.color;
   const labelText = data.label || colorSet.label;
 
-  // Gauge calculations
+  // Gauge con viewBox ampliado (0 0 320 170) para evitar recortes
   const gaugeLength = 408.4;
   const intensity = Math.max(0, Math.min(100, data.intensity_percent || 0));
   const gaugeOffset = gaugeLength * (1 - intensity / 100);
@@ -774,14 +726,8 @@ function renderVerdictCardC2(data, parentEl = conversation) {
   const loadColor = loadWidth > 75 ? '#FF4D4D' : loadWidth > 50 ? '#FFB800' : loadWidth > 30 ? '#FFB800' : '#D9F264';
   const riskColor = riskWidth > 75 ? '#FF4D4D' : riskWidth > 50 ? '#FF4D4D' : riskWidth > 25 ? '#FFB800' : '#D9F264';
 
-  // Actions: máx 2 do + 2 avoid, con texto completo guardado para tooltip
-  const doItems = (data.do_items || []).slice(0, 2);
-  const avoidItems = (data.avoid_items || []).slice(0, 2);
-
-  const truncate = (s, max = 10) => {
-    if (!s) return '';
-    return s.length > max ? s.substring(0, max) + '…' : s;
-  };
+  const doItems = (data.do_items || []).slice(0, 4);
+  const avoidItems = (data.avoid_items || []).slice(0, 4);
 
   const card = document.createElement('div');
   card.className = 'verdict';
@@ -795,14 +741,14 @@ function renderVerdictCardC2(data, parentEl = conversation) {
     </div>
 
     <div class="v-gauge-container">
-      <svg class="v-gauge-svg" viewBox="0 0 320 150" preserveAspectRatio="xMidYMid meet" style="font-family: 'Outfit', sans-serif;">
-        <path d="M 30 125 A 130 130 0 0 1 290 125" fill="none" stroke="#1f2024" stroke-width="14" stroke-linecap="round"/>
-        <path d="M 30 125 A 130 130 0 0 1 290 125" fill="none" stroke="${mainColor}" stroke-width="14" stroke-linecap="round" stroke-dasharray="${gaugeLength}" stroke-dashoffset="${gaugeOffset}"/>
-        <text x="160" y="92" text-anchor="middle" font-family="Outfit, sans-serif" font-size="72" font-weight="200" fill="#f4f1ec" style="letter-spacing: -0.04em;">${Math.round(intensity)}</text>
-        <text x="218" y="92" font-family="Outfit, sans-serif" font-size="26" font-weight="300" fill="#55524e">%</text>
-        <text x="160" y="118" text-anchor="middle" font-family="Outfit, sans-serif" font-size="9" font-weight="500" fill="#8a8680" style="letter-spacing: 0.22em;">INTENSIDAD HOY</text>
-        <text x="30" y="142" text-anchor="middle" font-family="Outfit, sans-serif" font-size="8" font-weight="500" fill="#55524e" style="letter-spacing: 0.15em;">0</text>
-        <text x="290" y="142" text-anchor="middle" font-family="Outfit, sans-serif" font-size="8" font-weight="500" fill="#55524e" style="letter-spacing: 0.15em;">100</text>
+      <svg class="v-gauge-svg" viewBox="0 0 320 170" preserveAspectRatio="xMidYMid meet" style="font-family: 'Outfit', sans-serif;">
+        <path d="M 30 140 A 130 130 0 0 1 290 140" fill="none" stroke="#1f2024" stroke-width="14" stroke-linecap="round"/>
+        <path d="M 30 140 A 130 130 0 0 1 290 140" fill="none" stroke="${mainColor}" stroke-width="14" stroke-linecap="round" stroke-dasharray="${gaugeLength}" stroke-dashoffset="${gaugeOffset}"/>
+        <text x="160" y="108" text-anchor="middle" font-family="Outfit, sans-serif" font-size="72" font-weight="200" fill="#f4f1ec" style="letter-spacing: -0.04em;">${Math.round(intensity)}</text>
+        <text x="218" y="108" font-family="Outfit, sans-serif" font-size="26" font-weight="300" fill="#55524e">%</text>
+        <text x="160" y="134" text-anchor="middle" font-family="Outfit, sans-serif" font-size="9" font-weight="500" fill="#8a8680" style="letter-spacing: 0.22em;">INTENSIDAD HOY</text>
+        <text x="30" y="162" text-anchor="middle" font-family="Outfit, sans-serif" font-size="8" font-weight="500" fill="#55524e" style="letter-spacing: 0.15em;">0</text>
+        <text x="290" y="162" text-anchor="middle" font-family="Outfit, sans-serif" font-size="8" font-weight="500" fill="#55524e" style="letter-spacing: 0.15em;">100</text>
       </svg>
     </div>
 
@@ -841,32 +787,34 @@ function renderVerdictCardC2(data, parentEl = conversation) {
     ` : ''}
 
     ${(doItems.length || avoidItems.length) ? `
-    <div class="v-actions-grid">
-      ${doItems.map(item => `
-        <div class="v-action-cell" data-full="${escapeHtml(item)}">
-          <div class="v-action-icon do">✓</div>
-          <div class="v-action-label">${escapeHtml(truncate(item))}</div>
+    <div class="v-actions-section">
+      ${doItems.length ? `
+        <div class="v-actions-title">Haz</div>
+        <div class="v-actions-list">
+          ${doItems.map(item => `
+            <div class="v-action-item">
+              <span class="v-action-item-icon do">✓</span>
+              <span>${escapeHtml(item)}</span>
+            </div>
+          `).join('')}
         </div>
-      `).join('')}
-      ${avoidItems.map(item => `
-        <div class="v-action-cell" data-full="${escapeHtml(item)}">
-          <div class="v-action-icon avoid">✕</div>
-          <div class="v-action-label">${escapeHtml(truncate(item))}</div>
+      ` : ''}
+      ${avoidItems.length ? `
+        <div class="v-actions-title" style="margin-top: ${doItems.length ? '14px' : '0'};">Evita</div>
+        <div class="v-actions-list" style="margin-bottom: 0;">
+          ${avoidItems.map(item => `
+            <div class="v-action-item avoid">
+              <span class="v-action-item-icon avoid">✕</span>
+              <span>${escapeHtml(item)}</span>
+            </div>
+          `).join('')}
         </div>
-      `).join('')}
+      ` : ''}
     </div>
     ` : ''}
 
     ${data.reasoning ? `<div class="v-reasoning">${formatText(data.reasoning)}</div>` : ''}
   `;
-
-  // Agregar listeners a las acciones para tooltip
-  card.querySelectorAll('.v-action-cell').forEach(cell => {
-    cell.addEventListener('click', (e) => {
-      const full = cell.getAttribute('data-full');
-      if (full) showTooltip(full, cell);
-    });
-  });
 
   parentEl.appendChild(card);
   scrollToBottom();
@@ -898,7 +846,7 @@ function processCompleteResponse(fullText, agentBubble) {
       }
       return fullText;
     } catch (e) {
-      console.warn('No se pudo parsear VERDICT JSON:', e);
+      console.warn('VERDICT parse error:', e);
       agentBubble.content.innerHTML = formatText(fullText);
       agentBubble.cursor.remove();
     }
@@ -994,7 +942,7 @@ function startChat() {
   document.getElementById('onboarding').classList.add('hidden');
   if (messageHistory.length === 0) {
     setTimeout(() => {
-      callAgent('[SISTEMA: El usuario acaba de abrir la app. Saluda brevemente variando la apertura según las opciones del system prompt, y haz tu primera pregunta del check-in del día.]');
+      callAgent('[SISTEMA: El usuario acaba de abrir la app. Saluda brevemente variando la apertura, y haz tu primera pregunta del check-in del día.]');
     }, 400);
   } else {
     restoreVisualHistory();
@@ -1033,11 +981,6 @@ input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 });
 
-// Scroll al fondo cuando el usuario toca el input (fix teclado iOS)
-input.addEventListener('focus', () => {
-  setTimeout(() => scrollToBottom(true), 300);
-});
-
 async function sendMessage() {
   const text = input.value.trim();
   if (!text || isStreaming) return;
@@ -1047,13 +990,6 @@ async function sendMessage() {
   renderUserMessage(text);
   await callAgent(text);
 }
-
-// Ocultar tooltip al tocar fuera
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.v-action-cell') && !e.target.closest('.action-tooltip')) {
-    hideTooltip();
-  }
-});
 
 // ========== INIT ==========
 const hadHistory = loadHistory();
