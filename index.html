@@ -854,7 +854,7 @@ const WORKER_URL = 'https://sport-agent-api.a-ardizzir.workers.dev';
 // ===============================================
 
 // Inicializar cliente Supabase
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Estado global
 let currentUser = null;
@@ -915,7 +915,7 @@ input.addEventListener('blur', () => {
 
 async function checkAuthState() {
   // Al cargar, verificar si hay sesión activa
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   
   if (session) {
     currentUser = session.user;
@@ -955,7 +955,7 @@ function hideEmailForm() {
 async function signInWithGoogle() {
   showLoginLoading();
   try {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: window.location.origin + window.location.pathname
@@ -988,11 +988,11 @@ async function signInWithEmail() {
   
   try {
     // Intentar sign in primero
-    let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    let { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     
     // Si falla por usuario no existente, intentar sign up
     if (error && error.message.toLowerCase().includes('invalid')) {
-      const result = await supabase.auth.signUp({ 
+      const result = await supabaseClient.auth.signUp({ 
         email, 
         password,
         options: {
@@ -1021,7 +1021,7 @@ async function signInWithEmail() {
 async function signOut() {
   if (!confirm('¿Cerrar sesión?')) return;
   
-  await supabase.auth.signOut();
+  await supabaseClient.auth.signOut();
   currentUser = null;
   currentConversationId = null;
   messageHistory = [];
@@ -1030,7 +1030,7 @@ async function signOut() {
 }
 
 // Listener de cambios de auth (importante para OAuth callback)
-supabase.auth.onAuthStateChange(async (event, session) => {
+supabaseClient.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session) {
     currentUser = session.user;
     await onUserAuthenticated();
@@ -1148,7 +1148,7 @@ async function saveMessageToDb(role, content) {
   if (!currentConversationId || !currentUser) return;
   
   try {
-    await supabase.from('messages').insert({
+    await supabaseClient.from('messages').insert({
       conversation_id: currentConversationId,
       user_id: currentUser.id,
       role: role,
@@ -1156,7 +1156,7 @@ async function saveMessageToDb(role, content) {
     });
     
     // Actualizar timestamp de conversación
-    await supabase.from('conversations')
+    await supabaseClient.from('conversations')
       .update({ updated_at: new Date().toISOString() })
       .eq('id', currentConversationId);
   } catch (error) {
