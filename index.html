@@ -4,15 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Sport Agent">
+<meta name="apple-mobile-web-app-title" content="ANATA">
 <meta name="theme-color" content="#0a0a0a">
-<title>Sport Agent</title>
+<title>ANATA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
 
-<!-- ⚠️ SUPABASE JS CLIENT - Se carga desde CDN público -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
@@ -25,8 +25,9 @@
   --text: #f4f1ec;
   --text-dim: #8a8680;
   --text-faint: #55524e;
-  --primary: #3B82F6;
-  --primary-dim: #2563eb;
+  --brand: #9CA9B5;
+  --brand-dim: #7d8a96;
+  --brand-bg: rgba(156, 169, 181, 0.1);
   --green: #D9F264;
   --yellow: #FFB800;
   --red: #FF4D4D;
@@ -63,6 +64,18 @@ html, body {
 
 .hidden { display: none !important; }
 
+/* ========== LOGO ANATA SVG ========== */
+/* Reconstrucción vectorial del isologo "ANA" apilado */
+.anata-logo {
+  display: inline-block;
+}
+
+.anata-logo svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 /* ========== LOGIN SCREEN ========== */
 .login-screen {
   display: flex;
@@ -75,36 +88,39 @@ html, body {
   text-align: center;
 }
 
-.login-logo {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: var(--primary);
+.login-logo-wrap {
+  width: 56px;
+  height: 140px;
+  margin-bottom: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 32px;
-  color: white;
+}
+
+.login-wordmark {
+  font-size: 13px;
   font-weight: 500;
-  font-size: 28px;
-  letter-spacing: -0.5px;
+  letter-spacing: 8px;
+  color: var(--text);
+  margin-bottom: 12px;
+  text-transform: uppercase;
 }
 
 .login-title {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 200;
-  letter-spacing: -1px;
-  margin-bottom: 12px;
+  letter-spacing: -0.8px;
+  margin-bottom: 10px;
   color: var(--text);
 }
 
 .login-subtitle {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 300;
   color: var(--text-dim);
-  margin-bottom: 48px;
-  line-height: 1.5;
-  max-width: 320px;
+  margin-bottom: 44px;
+  line-height: 1.6;
+  max-width: 280px;
 }
 
 .login-buttons {
@@ -137,41 +153,23 @@ html, body {
   background: var(--surface-2);
 }
 
-.btn-login svg {
+.btn-login svg.btn-icon-svg {
   width: 20px;
   height: 20px;
 }
 
 .btn-login-primary {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: white;
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--bg);
+  font-weight: 500;
 }
 
 .btn-login-primary:hover, .btn-login-primary:active {
-  background: var(--primary-dim);
-  border-color: var(--primary-dim);
+  background: var(--brand-dim);
+  border-color: var(--brand-dim);
 }
 
-.login-divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 8px 0;
-  color: var(--text-faint);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.login-divider::before, .login-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
-/* ========== EMAIL FORM ========== */
 .email-form {
   width: 100%;
   max-width: 320px;
@@ -195,7 +193,7 @@ html, body {
 }
 
 .email-input:focus {
-  border-color: var(--primary);
+  border-color: var(--brand);
 }
 
 .email-input::placeholder {
@@ -221,9 +219,7 @@ html, body {
   padding: 8px;
 }
 
-.login-back:hover {
-  color: var(--text);
-}
+.login-back:hover { color: var(--text); }
 
 .login-loading {
   display: flex;
@@ -238,13 +234,312 @@ html, body {
   width: 32px;
   height: 32px;
   border: 2px solid var(--border-strong);
-  border-top-color: var(--primary);
+  border-top-color: var(--brand);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* ========== ONBOARDING ========== */
+.onboarding {
+  display: flex;
+  flex-direction: column;
+  height: var(--app-height);
+  background: var(--bg);
+  padding: max(env(safe-area-inset-top), 24px) 24px max(env(safe-area-inset-bottom), 24px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ob-progress {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 32px;
+  padding: 0 4px;
+}
+
+.ob-progress-bar {
+  flex: 1;
+  height: 3px;
+  background: var(--border-strong);
+  border-radius: 2px;
+  transition: background 0.3s;
+}
+
+.ob-progress-bar.active {
+  background: var(--brand);
+}
+
+.ob-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ob-step {
+  display: none;
+  flex-direction: column;
+  animation: stepIn 0.4s ease-out;
+}
+
+.ob-step.active {
+  display: flex;
+}
+
+@keyframes stepIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ob-welcome-logo {
+  width: 48px;
+  height: 120px;
+  margin: 0 auto 28px;
+}
+
+.ob-title {
+  font-size: 28px;
+  font-weight: 200;
+  letter-spacing: -0.8px;
+  color: var(--text);
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.ob-subtitle {
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--text-dim);
+  line-height: 1.6;
+  text-align: center;
+  margin-bottom: 36px;
+  max-width: 300px;
+  align-self: center;
+}
+
+.ob-question {
+  font-size: 22px;
+  font-weight: 300;
+  color: var(--text);
+  margin-bottom: 28px;
+  letter-spacing: -0.4px;
+  line-height: 1.3;
+}
+
+.ob-field {
+  margin-bottom: 22px;
+}
+
+.ob-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.ob-label-optional {
+  font-size: 10px;
+  color: var(--text-faint);
+  text-transform: none;
+  letter-spacing: 0.3px;
+  margin-left: 6px;
+}
+
+.ob-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-family: var(--font);
+  font-size: 16px;
+  font-weight: 400;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.ob-input:focus {
+  border-color: var(--brand);
+}
+
+.ob-input::placeholder {
+  color: var(--text-faint);
+}
+
+.ob-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Chips multiselect */
+.ob-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ob-chip {
+  padding: 9px 14px;
+  border-radius: 100px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.ob-chip:hover, .ob-chip:active {
+  border-color: var(--text-dim);
+}
+
+.ob-chip.selected {
+  background: var(--brand-bg);
+  border-color: var(--brand);
+  color: var(--brand);
+  font-weight: 500;
+}
+
+/* Slider de frecuencia */
+.ob-slider-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  padding: 24px 20px;
+}
+
+.ob-slider-value {
+  font-size: 56px;
+  font-weight: 200;
+  color: var(--brand);
+  text-align: center;
+  letter-spacing: -2px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.ob-slider-label {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-dim);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 24px;
+}
+
+.ob-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--border-strong);
+  border-radius: 2px;
+  outline: none;
+}
+
+.ob-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--brand);
+  cursor: pointer;
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--brand);
+}
+
+.ob-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--brand);
+  cursor: pointer;
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--brand);
+}
+
+.ob-slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding: 0 2px;
+}
+
+.ob-slider-ticks span {
+  font-size: 10px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.ob-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 24px;
+}
+
+.ob-button {
+  background: var(--brand);
+  color: var(--bg);
+  border: none;
+  padding: 16px 24px;
+  border-radius: 100px;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.ob-button:hover, .ob-button:active {
+  background: var(--brand-dim);
+}
+
+.ob-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.ob-button-secondary {
+  background: none;
+  color: var(--text-dim);
+  border: none;
+  padding: 12px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.ob-button-secondary:hover { color: var(--text); }
+
+.ob-error {
+  color: var(--red);
+  font-size: 13px;
+  text-align: center;
+  min-height: 18px;
+  padding: 4px 0;
 }
 
 /* ========== HEADER ========== */
@@ -265,11 +560,11 @@ html, body {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: var(--primary);
+  background: var(--brand);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--bg);
   font-weight: 500;
   font-size: 14px;
   letter-spacing: -0.3px;
@@ -279,6 +574,17 @@ html, body {
   background-size: cover;
   background-position: center;
   transition: background 0.3s ease;
+}
+
+.avatar.logo-mode {
+  background: var(--bg);
+  border: 1px solid var(--brand);
+  padding: 4px;
+}
+
+.avatar.logo-mode svg {
+  width: 100%;
+  height: 100%;
 }
 
 .avatar.thinking {
@@ -398,9 +704,10 @@ html, body {
 }
 
 .msg-user .msg-bubble {
-  background: var(--primary);
-  color: white;
+  background: var(--brand);
+  color: var(--bg);
   border-bottom-right-radius: 6px;
+  font-weight: 400;
 }
 
 .msg-agent .msg-bubble {
@@ -432,7 +739,7 @@ html, body {
   display: inline-block;
   width: 2px;
   height: 14px;
-  background: var(--primary);
+  background: var(--brand);
   margin-left: 2px;
   vertical-align: text-bottom;
   animation: blink 0.9s steps(2) infinite;
@@ -575,9 +882,7 @@ html, body {
   font-weight: 400;
 }
 
-.v-section {
-  margin-bottom: 12px;
-}
+.v-section { margin-bottom: 12px; }
 
 .v-section-label {
   font-size: 10px;
@@ -655,7 +960,7 @@ html, body {
 }
 
 .input-wrap:focus-within {
-  border-color: var(--primary);
+  border-color: var(--brand);
 }
 
 #inputField {
@@ -681,9 +986,9 @@ html, body {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--primary);
+  background: var(--brand);
   border: none;
-  color: white;
+  color: var(--bg);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -702,57 +1007,6 @@ html, body {
   height: 18px;
 }
 
-/* ========== ONBOARDING ========== */
-.onboarding-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--bg);
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 40px 32px;
-  text-align: center;
-  max-width: 520px;
-  margin: 0 auto;
-}
-
-.onboarding-overlay.hidden { display: none; }
-
-.ob-title {
-  font-size: 32px;
-  font-weight: 200;
-  letter-spacing: -1px;
-  margin-bottom: 16px;
-}
-
-.ob-subtitle {
-  font-size: 15px;
-  color: var(--text-dim);
-  margin-bottom: 48px;
-  line-height: 1.5;
-  max-width: 320px;
-  font-weight: 300;
-}
-
-.ob-button {
-  background: var(--primary);
-  color: white;
-  border: none;
-  padding: 14px 32px;
-  border-radius: 100px;
-  font-family: var(--font);
-  font-size: 15px;
-  font-weight: 400;
-  cursor: pointer;
-  letter-spacing: 0.2px;
-}
-
-.ob-button:hover, .ob-button:active {
-  background: var(--primary-dim);
-}
-
 /* ========== SCROLLBAR ========== */
 .conversation::-webkit-scrollbar { width: 4px; }
 .conversation::-webkit-scrollbar-track { background: transparent; }
@@ -762,27 +1016,44 @@ html, body {
 </head>
 <body>
 
+<!-- SVG SPRITE: Logo ANATA reutilizable -->
+<svg width="0" height="0" style="position:absolute;">
+  <defs>
+    <!-- Logo ANATA isologo: 3 arcos verticales apilados (A-N-A) -->
+    <symbol id="anata-logo" viewBox="0 0 56 140">
+      <!-- A superior (con cross-bar diagonal) -->
+      <path d="M 14 4 L 14 38 M 42 4 L 42 38 M 14 4 Q 14 -2 28 -2 Q 42 -2 42 4" stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="square"/>
+      <path d="M 8 28 L 30 18" stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="square"/>
+      <!-- N central (arco simple invertido) -->
+      <path d="M 14 50 L 14 88 M 42 50 L 42 88 M 14 50 Q 14 44 28 44 Q 42 44 42 50" stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="square"/>
+      <!-- A inferior espejada (con cross-bar diagonal abajo) -->
+      <path d="M 14 96 L 14 130 M 42 96 L 42 130 M 14 130 Q 14 136 28 136 Q 42 136 42 130" stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="square"/>
+      <path d="M 26 120 L 48 110" stroke="currentColor" stroke-width="6" fill="none" stroke-linecap="square"/>
+    </symbol>
+  </defs>
+</svg>
+
 <div class="app">
 
   <!-- ========== PANTALLA DE LOGIN ========== -->
   <div id="loginScreen" class="login-screen">
-    <div class="login-logo">SA</div>
-    <h1 class="login-title">Sport Agent</h1>
+    <div class="login-logo-wrap" style="color: var(--brand);">
+      <svg width="56" height="140"><use href="#anata-logo"/></svg>
+    </div>
+    <div class="login-wordmark">ANATA</div>
     <p class="login-subtitle">Tu cuerpo te habla.<br>Yo traduzco.</p>
 
-    <!-- Vista inicial de login (Google + Email) -->
     <div id="loginButtons" class="login-buttons">
       <button class="btn-login" onclick="signInWithGoogle()">
-        <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        <svg class="btn-icon-svg" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
         Continuar con Google
       </button>
       <button class="btn-login" onclick="showEmailForm()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>
+        <svg class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>
         Continuar con email
       </button>
     </div>
 
-    <!-- Formulario de email (oculto inicialmente) -->
     <div id="emailForm" class="email-form hidden">
       <input id="emailInput" class="email-input" type="email" placeholder="tu@email.com" autocomplete="email">
       <input id="passwordInput" class="email-input" type="password" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="current-password">
@@ -791,26 +1062,106 @@ html, body {
       <button class="login-back" onclick="hideEmailForm()">← Volver</button>
     </div>
 
-    <!-- Loading state durante autenticación -->
     <div id="loginLoading" class="login-loading hidden">
       <div class="spinner"></div>
       <span>Conectando...</span>
     </div>
   </div>
 
-  <!-- ========== ONBOARDING (primer mensaje) ========== -->
-  <div id="onboarding" class="onboarding-overlay hidden">
-    <h1 class="ob-title">Hola.</h1>
-    <p class="ob-subtitle">Soy tu agente.<br>Contame qué pasa hoy y te ayudo a decidir.</p>
-    <button class="ob-button" onclick="startChat()">Empezar</button>
+  <!-- ========== ONBOARDING ========== -->
+  <div id="onboarding" class="onboarding hidden">
+    <div class="ob-progress">
+      <div class="ob-progress-bar active" data-step="0"></div>
+      <div class="ob-progress-bar" data-step="1"></div>
+      <div class="ob-progress-bar" data-step="2"></div>
+      <div class="ob-progress-bar" data-step="3"></div>
+    </div>
+
+    <div class="ob-content">
+
+      <!-- STEP 0: Welcome -->
+      <div class="ob-step active" data-step="0">
+        <div class="ob-welcome-logo" style="color: var(--brand);">
+          <svg width="48" height="120"><use href="#anata-logo"/></svg>
+        </div>
+        <h1 class="ob-title">Hola.</h1>
+        <p class="ob-subtitle">Soy ANATA. Antes de empezar, necesito conocerte un poco.</p>
+      </div>
+
+      <!-- STEP 1: Identidad -->
+      <div class="ob-step" data-step="1">
+        <h2 class="ob-question">Empecemos por lo básico.</h2>
+
+        <div class="ob-field">
+          <label class="ob-label">Tu nombre</label>
+          <input id="obName" class="ob-input" type="text" placeholder="¿Cómo te llamamos?" autocomplete="given-name">
+        </div>
+
+        <div class="ob-row">
+          <div class="ob-field">
+            <label class="ob-label">Edad</label>
+            <input id="obAge" class="ob-input" type="number" placeholder="32" min="14" max="100" inputmode="numeric">
+          </div>
+          <div class="ob-field">
+            <label class="ob-label">Peso <span class="ob-label-optional">opcional</span></label>
+            <input id="obWeight" class="ob-input" type="number" placeholder="kg" min="30" max="200" inputmode="decimal" step="0.5">
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2: Disciplinas + Experiencia -->
+      <div class="ob-step" data-step="2">
+        <h2 class="ob-question">¿Qué entrenás?</h2>
+
+        <div class="ob-field">
+          <label class="ob-label">Tus disciplinas <span class="ob-label-optional">elegí las que practiques</span></label>
+          <div id="obDisciplines" class="ob-chips">
+            <!-- Se cargan desde Supabase al iniciar onboarding -->
+          </div>
+        </div>
+
+        <div class="ob-field">
+          <label class="ob-label">Tu experiencia</label>
+          <div class="ob-chips">
+            <div class="ob-chip" data-experience="<1">Menos de 1 año</div>
+            <div class="ob-chip" data-experience="1-3">1 a 3 años</div>
+            <div class="ob-chip" data-experience="3-7">3 a 7 años</div>
+            <div class="ob-chip" data-experience="+7">Más de 7 años</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: Frecuencia -->
+      <div class="ob-step" data-step="3">
+        <h2 class="ob-question">¿Con qué frecuencia entrenás?</h2>
+
+        <div class="ob-slider-wrap">
+          <div id="obFreqValue" class="ob-slider-value">4</div>
+          <div class="ob-slider-label">veces por semana</div>
+          <input id="obFrequency" class="ob-slider" type="range" min="1" max="7" value="4" step="1">
+          <div class="ob-slider-ticks">
+            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="ob-footer">
+      <div id="obError" class="ob-error"></div>
+      <button id="obNext" class="ob-button" onclick="onboardingNext()">Empezar</button>
+      <button id="obBack" class="ob-button-secondary hidden" onclick="onboardingBack()">← Atrás</button>
+    </div>
   </div>
 
   <!-- ========== APP PRINCIPAL ========== -->
   <div id="appMain" class="hidden" style="display:none; flex-direction:column; height:100%;">
     <div class="header">
-      <div id="avatar" class="avatar">SA</div>
+      <div id="avatar" class="avatar logo-mode" style="color: var(--brand);">
+        <svg width="100%" height="100%"><use href="#anata-logo"/></svg>
+      </div>
       <div class="header-info">
-        <div id="headerName" class="header-title">Sport Agent</div>
+        <div id="headerName" class="header-title">ANATA</div>
         <div id="headerStatus" class="header-status">● En línea</div>
       </div>
       <div class="header-actions">
@@ -841,35 +1192,44 @@ html, body {
 
 <script>
 // ===============================================
-// ⚠️ CONFIGURACIÓN - PEGAR ACÁ TUS CREDENCIALES ⚠️
+// CONFIGURACIÓN
 // ===============================================
 
 const SUPABASE_URL = 'https://thmauqyngmlmgrfnldxj.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRobWF1cXluZ21sbWdyZm5sZHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwMjE5NzIsImV4cCI6MjA5MzU5Nzk3Mn0._ZwZORe4POzoi6hX9NBxgHnXlK8L7KxmnaWAnk2HpxI';
-
 const WORKER_URL = 'https://sport-agent-api.a-ardizzir.workers.dev';
 
 // ===============================================
 // NO TOCAR DEBAJO DE ESTA LÍNEA
 // ===============================================
 
-// Inicializar cliente Supabase
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Estado global
 let currentUser = null;
+let currentProfile = null;
 let currentConversationId = null;
 let messageHistory = [];
 let isStreaming = false;
+let availableDisciplines = [];
+let onboardingData = {
+  name: '',
+  age: null,
+  weight_kg: null,
+  disciplines: [],
+  experience: null,
+  frequency_per_week: 4
+};
+let onboardingStep = 0;
 
-// Elementos del DOM
+// Referencias DOM
 const loginScreen = document.getElementById('loginScreen');
 const loginButtons = document.getElementById('loginButtons');
 const emailForm = document.getElementById('emailForm');
 const loginLoading = document.getElementById('loginLoading');
 const loginError = document.getElementById('loginError');
-const appMain = document.getElementById('appMain');
 const onboarding = document.getElementById('onboarding');
+const appMain = document.getElementById('appMain');
 const conversation = document.getElementById('conversation');
 const input = document.getElementById('inputField');
 const sendBtn = document.getElementById('sendBtn');
@@ -914,9 +1274,7 @@ input.addEventListener('blur', () => {
 // ===============================================
 
 async function checkAuthState() {
-  // Al cargar, verificar si hay sesión activa
   const { data: { session } } = await supabaseClient.auth.getSession();
-  
   if (session) {
     currentUser = session.user;
     await onUserAuthenticated();
@@ -927,6 +1285,7 @@ async function checkAuthState() {
 
 function showLoginScreen() {
   loginScreen.classList.remove('hidden');
+  onboarding.classList.add('hidden');
   appMain.style.display = 'none';
   loginButtons.classList.remove('hidden');
   emailForm.classList.add('hidden');
@@ -957,9 +1316,7 @@ async function signInWithGoogle() {
   try {
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: window.location.origin + window.location.pathname
-      }
+      options: { redirectTo: window.location.origin + window.location.pathname }
     });
     if (error) throw error;
   } catch (error) {
@@ -972,40 +1329,19 @@ async function signInWithGoogle() {
 async function signInWithEmail() {
   const email = document.getElementById('emailInput').value.trim();
   const password = document.getElementById('passwordInput').value;
-  
-  if (!email || !password) {
-    loginError.textContent = 'Completá email y contraseña';
-    return;
-  }
-  
-  if (password.length < 6) {
-    loginError.textContent = 'La contraseña debe tener al menos 6 caracteres';
-    return;
-  }
-  
+  if (!email || !password) { loginError.textContent = 'Completá email y contraseña'; return; }
+  if (password.length < 6) { loginError.textContent = 'La contraseña debe tener al menos 6 caracteres'; return; }
   loginError.textContent = '';
   showLoginLoading();
-  
   try {
-    // Intentar sign in primero
     let { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-    
-    // Si falla por usuario no existente, intentar sign up
     if (error && error.message.toLowerCase().includes('invalid')) {
-      const result = await supabaseClient.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          emailRedirectTo: window.location.origin + window.location.pathname
-        }
-      });
-      
+      const result = await supabaseClient.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin + window.location.pathname } });
       if (result.error) throw result.error;
       data = result.data;
     } else if (error) {
       throw error;
     }
-    
     if (data.user) {
       currentUser = data.user;
       await onUserAuthenticated();
@@ -1020,120 +1356,389 @@ async function signInWithEmail() {
 
 async function signOut() {
   if (!confirm('¿Cerrar sesión?')) return;
-  
   await supabaseClient.auth.signOut();
   currentUser = null;
+  currentProfile = null;
   currentConversationId = null;
   messageHistory = [];
   conversation.innerHTML = '<div class="day-marker">Hoy</div>';
   showLoginScreen();
 }
 
-// Listener de cambios de auth (importante para OAuth callback)
 supabaseClient.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session) {
     currentUser = session.user;
     await onUserAuthenticated();
   } else if (event === 'SIGNED_OUT') {
     currentUser = null;
+    currentProfile = null;
     showLoginScreen();
   }
 });
 
 // ===============================================
-// DESPUÉS DEL LOGIN
+// AFTER LOGIN: decidir si va a onboarding o chat
 // ===============================================
 
 async function onUserAuthenticated() {
-  // Mostrar app principal
   loginScreen.classList.add('hidden');
+
+  // Cargar profile del usuario
+  try {
+    const { data: profile, error } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', currentUser.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error loading profile:', error);
+    }
+
+    currentProfile = profile;
+
+    if (!profile || !profile.onboarding_completed) {
+      // Primera vez o no completó onboarding → mostrar onboarding
+      await startOnboarding();
+    } else {
+      // Usuario con onboarding completo → ir al chat
+      await enterChatApp();
+    }
+  } catch (error) {
+    console.error('Error in onUserAuthenticated:', error);
+    await startOnboarding();
+  }
+}
+
+// ===============================================
+// ONBOARDING
+// ===============================================
+
+async function startOnboarding() {
+  onboarding.classList.remove('hidden');
+  appMain.style.display = 'none';
+
+  // Pre-llenar nombre si vino de Google
+  const meta = currentUser.user_metadata || {};
+  const suggestedName = meta.full_name || meta.name || currentUser.email?.split('@')[0] || '';
+  document.getElementById('obName').value = suggestedName;
+  onboardingData.name = suggestedName;
+
+  // Cargar disciplinas del catálogo
+  await loadDisciplines();
+
+  // Inicializar slider de frecuencia
+  setupFrequencySlider();
+
+  // Setup de chips de experiencia (selección única)
+  setupExperienceChips();
+
+  onboardingStep = 0;
+  showOnboardingStep(0);
+}
+
+async function loadDisciplines() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('disciplines')
+      .select('id, name')
+      .order('name');
+
+    if (error) throw error;
+    availableDisciplines = data || [];
+    renderDisciplineChips();
+  } catch (error) {
+    console.error('Error loading disciplines:', error);
+    // Fallback: lista hardcodeada por si falla la query
+    availableDisciplines = [
+      { id: 'fallback-1', name: 'Fútbol' }, { id: 'fallback-2', name: 'Running' },
+      { id: 'fallback-3', name: 'Gimnasio' }, { id: 'fallback-4', name: 'Crossfit' },
+      { id: 'fallback-5', name: 'Ciclismo/MTB' }, { id: 'fallback-6', name: 'Natación' }
+    ];
+    renderDisciplineChips();
+  }
+}
+
+function renderDisciplineChips() {
+  const container = document.getElementById('obDisciplines');
+  container.innerHTML = availableDisciplines.map(d =>
+    `<div class="ob-chip" data-discipline-id="${d.id}" data-discipline-name="${escapeHtml(d.name)}">${escapeHtml(d.name)}</div>`
+  ).join('');
+
+  // Click handler para multiselect
+  container.querySelectorAll('.ob-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      chip.classList.toggle('selected');
+      updateOnboardingDisciplines();
+      validateCurrentStep();
+    });
+  });
+}
+
+function updateOnboardingDisciplines() {
+  const selected = document.querySelectorAll('#obDisciplines .ob-chip.selected');
+  onboardingData.disciplines = Array.from(selected).map(chip => ({
+    id: chip.dataset.disciplineId,
+    name: chip.dataset.disciplineName
+  }));
+}
+
+function setupExperienceChips() {
+  const chips = document.querySelectorAll('[data-experience]');
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chips.forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      onboardingData.experience = chip.dataset.experience;
+      validateCurrentStep();
+    });
+  });
+}
+
+function setupFrequencySlider() {
+  const slider = document.getElementById('obFrequency');
+  const valueDisplay = document.getElementById('obFreqValue');
+  slider.addEventListener('input', () => {
+    onboardingData.frequency_per_week = parseInt(slider.value);
+    valueDisplay.textContent = slider.value;
+  });
+}
+
+function showOnboardingStep(step) {
+  document.querySelectorAll('.ob-step').forEach(s => s.classList.remove('active'));
+  document.querySelector(`.ob-step[data-step="${step}"]`).classList.add('active');
+
+  // Actualizar progress bars
+  document.querySelectorAll('.ob-progress-bar').forEach((bar, idx) => {
+    bar.classList.toggle('active', idx <= step);
+  });
+
+  // Texto del botón principal
+  const btnNext = document.getElementById('obNext');
+  const btnBack = document.getElementById('obBack');
+
+  if (step === 0) {
+    btnNext.textContent = 'Empezar';
+    btnBack.classList.add('hidden');
+  } else if (step === 3) {
+    btnNext.textContent = 'Listo';
+    btnBack.classList.remove('hidden');
+  } else {
+    btnNext.textContent = 'Continuar';
+    btnBack.classList.remove('hidden');
+  }
+
+  // Validar paso actual
+  validateCurrentStep();
+
+  // Focus en primer input del paso si aplica
+  if (step === 1) {
+    setTimeout(() => document.getElementById('obName').focus(), 200);
+  }
+}
+
+function validateCurrentStep() {
+  const btn = document.getElementById('obNext');
+  const errorEl = document.getElementById('obError');
+  errorEl.textContent = '';
+  btn.disabled = false;
+
+  if (onboardingStep === 0) {
+    btn.disabled = false;
+  } else if (onboardingStep === 1) {
+    const name = document.getElementById('obName').value.trim();
+    const age = parseInt(document.getElementById('obAge').value);
+    if (!name || !age || age < 14 || age > 100) {
+      btn.disabled = true;
+    }
+  } else if (onboardingStep === 2) {
+    if (onboardingData.disciplines.length === 0 || !onboardingData.experience) {
+      btn.disabled = true;
+    }
+  } else if (onboardingStep === 3) {
+    btn.disabled = false;
+  }
+}
+
+async function onboardingNext() {
+  const errorEl = document.getElementById('obError');
+  errorEl.textContent = '';
+
+  // Capturar datos del paso actual
+  if (onboardingStep === 1) {
+    const name = document.getElementById('obName').value.trim();
+    const age = parseInt(document.getElementById('obAge').value);
+    const weight = parseFloat(document.getElementById('obWeight').value);
+    if (!name) { errorEl.textContent = 'Necesito tu nombre'; return; }
+    if (!age || age < 14 || age > 100) { errorEl.textContent = 'Edad inválida'; return; }
+    onboardingData.name = name;
+    onboardingData.age = age;
+    onboardingData.weight_kg = weight && weight >= 30 && weight <= 200 ? weight : null;
+  }
+
+  if (onboardingStep < 3) {
+    onboardingStep++;
+    showOnboardingStep(onboardingStep);
+  } else {
+    // Último paso: guardar todo y entrar al chat
+    await finishOnboarding();
+  }
+}
+
+function onboardingBack() {
+  if (onboardingStep > 0) {
+    onboardingStep--;
+    showOnboardingStep(onboardingStep);
+  }
+}
+
+async function finishOnboarding() {
+  const btn = document.getElementById('obNext');
+  const errorEl = document.getElementById('obError');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  errorEl.textContent = '';
+
+  try {
+    // 1. Upsert profile con todos los datos
+    const profileData = {
+      id: currentUser.id,
+      email: currentUser.email,
+      name: onboardingData.name,
+      age: onboardingData.age,
+      weight_kg: onboardingData.weight_kg,
+      frequency_per_week: onboardingData.frequency_per_week,
+      onboarding_completed: true,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error: profileError } = await supabaseClient
+      .from('profiles')
+      .upsert(profileData);
+
+    if (profileError) throw profileError;
+
+    // 2. Insertar disciplinas en user_disciplines
+    if (onboardingData.disciplines.length > 0) {
+      // Borrar las anteriores por si las hay
+      await supabaseClient
+        .from('user_disciplines')
+        .delete()
+        .eq('user_id', currentUser.id);
+
+      const disciplinesData = onboardingData.disciplines.map((d, idx) => ({
+        user_id: currentUser.id,
+        discipline_id: d.id,
+        is_primary: idx === 0,
+        level: onboardingData.experience
+      }));
+
+      const { error: discError } = await supabaseClient
+        .from('user_disciplines')
+        .insert(disciplinesData);
+
+      if (discError) {
+        console.error('Error inserting disciplines:', discError);
+        // No es crítico, seguimos
+      }
+    }
+
+    // 3. Cargar el profile actualizado
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', currentUser.id)
+      .single();
+
+    currentProfile = profile;
+
+    // 4. Entrar al chat con mensaje personalizado
+    await enterChatApp(true);
+
+  } catch (error) {
+    console.error('Error finishing onboarding:', error);
+    errorEl.textContent = 'Hubo un error al guardar. Intentalo de nuevo.';
+    btn.disabled = false;
+    btn.textContent = 'Listo';
+  }
+}
+
+// ===============================================
+// ENTRAR AL CHAT
+// ===============================================
+
+async function enterChatApp(justFinishedOnboarding = false) {
+  onboarding.classList.add('hidden');
   appMain.style.display = 'flex';
   appMain.classList.remove('hidden');
-  
-  // Configurar header con info del usuario
+
   setupUserHeader();
-  
-  // Cargar conversación más reciente o crear una nueva
-  await loadOrCreateConversation();
+
+  if (justFinishedOnboarding) {
+    // Crear conversación nueva y disparar primer mensaje personalizado
+    await createNewConversation();
+    setTimeout(() => triggerFirstMessage(), 600);
+  } else {
+    // Usuario recurrente: cargar conversación existente o crear nueva
+    await loadOrCreateConversation();
+  }
 }
 
 function setupUserHeader() {
-  const meta = currentUser.user_metadata || {};
-  const displayName = meta.full_name || meta.name || currentUser.email?.split('@')[0] || 'Usuario';
-  const avatarUrl = meta.avatar_url || meta.picture;
-  
+  const displayName = currentProfile?.name || currentUser.email?.split('@')[0] || 'Usuario';
   headerName.textContent = displayName;
-  
-  if (avatarUrl) {
-    avatar.style.backgroundImage = `url(${avatarUrl})`;
-    avatar.textContent = '';
-  } else {
-    const initials = displayName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-    avatar.textContent = initials;
-    avatar.style.backgroundImage = '';
-  }
+  // Avatar mantiene el logo de ANATA (es la "marca" del agente, no del usuario)
 }
 
 async function loadOrCreateConversation() {
   try {
-    // Buscar la conversación más reciente del usuario
-    const { data: conversations, error } = await supabase
+    const { data: conversations, error } = await supabaseClient
       .from('conversations')
       .select('id')
       .eq('user_id', currentUser.id)
       .order('updated_at', { ascending: false })
       .limit(1);
-    
+
     if (error) throw error;
-    
+
     if (conversations && conversations.length > 0) {
-      // Cargar conversación existente
       currentConversationId = conversations[0].id;
       await loadMessages(currentConversationId);
-      
-      // Si no hay mensajes, mostrar onboarding
+
       if (messageHistory.length === 0) {
-        showOnboarding();
+        setTimeout(() => triggerFirstMessage(), 400);
       }
     } else {
-      // No hay conversaciones previas: crear una nueva y mostrar onboarding
       await createNewConversation();
-      showOnboarding();
+      setTimeout(() => triggerFirstMessage(), 400);
     }
   } catch (error) {
     console.error('Error loading conversation:', error);
-    // Continuar igual mostrando onboarding
-    showOnboarding();
   }
 }
 
 async function createNewConversation() {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('conversations')
     .insert({ user_id: currentUser.id })
     .select()
     .single();
-  
   if (error) throw error;
   currentConversationId = data.id;
   return data;
 }
 
 async function loadMessages(conversationId) {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('messages')
     .select('role, content, created_at')
     .eq('conversation_id', conversationId)
     .order('created_at', { ascending: true });
-  
-  if (error) {
-    console.error('Error loading messages:', error);
-    return;
-  }
-  
+
+  if (error) { console.error('Error loading messages:', error); return; }
+
   messageHistory = data.map(m => ({ role: m.role, content: m.content }));
-  
-  // Renderizar visualmente los mensajes
+
   for (const msg of messageHistory) {
     if (msg.role === 'user' && !msg.content.startsWith('[SISTEMA:')) {
       renderUserMessage(msg.content);
@@ -1146,7 +1751,6 @@ async function loadMessages(conversationId) {
 
 async function saveMessageToDb(role, content) {
   if (!currentConversationId || !currentUser) return;
-  
   try {
     await supabaseClient.from('messages').insert({
       conversation_id: currentConversationId,
@@ -1154,8 +1758,6 @@ async function saveMessageToDb(role, content) {
       role: role,
       content: content
     });
-    
-    // Actualizar timestamp de conversación
     await supabaseClient.from('conversations')
       .update({ updated_at: new Date().toISOString() })
       .eq('id', currentConversationId);
@@ -1164,12 +1766,46 @@ async function saveMessageToDb(role, content) {
   }
 }
 
-function showOnboarding() {
-  onboarding.classList.remove('hidden');
+// ===============================================
+// PRIMER MENSAJE PERSONALIZADO
+// ===============================================
+
+function buildSystemContextMessage() {
+  // Construye el mensaje contextual con los datos del usuario para que ANATA salude personalizado
+  if (!currentProfile) {
+    return '[SISTEMA: Es el primer mensaje del usuario. Saluda brevemente y haz tu primera pregunta del check-in del día.]';
+  }
+
+  const name = currentProfile.name || 'el usuario';
+  const age = currentProfile.age ? `${currentProfile.age} años` : null;
+  const freq = currentProfile.frequency_per_week || null;
+
+  // Disciplinas del usuario (las cargamos para el contexto)
+  const disciplinesContext = onboardingData.disciplines.length > 0
+    ? onboardingData.disciplines.map(d => d.name).join(', ')
+    : null;
+
+  const experience = onboardingData.experience || null;
+
+  let context = `[SISTEMA: Primera vez del usuario en la app. Datos del onboarding:`;
+  context += `\n- Nombre: ${name}`;
+  if (age) context += `\n- Edad: ${age}`;
+  if (disciplinesContext) context += `\n- Disciplinas: ${disciplinesContext}`;
+  if (experience) context += `\n- Experiencia: ${experience} años`;
+  if (freq) context += `\n- Frecuencia: ${freq} veces/semana`;
+
+  context += `\n\nSaluda usando el nombre del usuario, menciona brevemente que ves sus disciplinas y frecuencia (sin enumerar todo, integralo natural), y hacé tu primera pregunta del check-in del día (cómo se siente, cómo durmió, qué tal el cuerpo hoy). Sé breve, cálido y directo.]`;
+
+  return context;
+}
+
+function triggerFirstMessage() {
+  const systemMsg = buildSystemContextMessage();
+  callAgent(systemMsg);
 }
 
 // ===============================================
-// HELPERS DE UI (mantenidos de v0.4.2)
+// HELPERS DE UI
 // ===============================================
 
 function getTime() {
@@ -1207,6 +1843,7 @@ function formatText(text) {
 }
 
 function escapeHtml(str) {
+  if (typeof str !== 'string') return '';
   return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
 }
 
@@ -1250,7 +1887,7 @@ function renderError(message) {
 }
 
 // ===============================================
-// VERDICT CARD (mantenido de v0.4.2)
+// VERDICT CARD
 // ===============================================
 
 function renderVerdictCardC2(data, parentEl = conversation) {
@@ -1269,7 +1906,7 @@ function renderVerdictCardC2(data, parentEl = conversation) {
 
   const loadWidth = Math.max(0, Math.min(100, data.load_percent || 0));
   const riskWidth = Math.max(0, Math.min(100, data.risk_percent || 0));
-  
+
   const loadColor = loadWidth > 75 ? '#FF4D4D' : loadWidth > 50 ? '#FFB800' : loadWidth > 30 ? '#FFB800' : '#D9F264';
   const riskColor = riskWidth > 75 ? '#FF4D4D' : riskWidth > 50 ? '#FF4D4D' : riskWidth > 25 ? '#FFB800' : '#D9F264';
 
@@ -1286,7 +1923,6 @@ function renderVerdictCardC2(data, parentEl = conversation) {
       </div>
       <span class="v-timestamp">${getDateLabel()} · ${getTime()}</span>
     </div>
-    
     <div class="v-gauge">
       <svg viewBox="0 0 280 180" xmlns="http://www.w3.org/2000/svg">
         <path d="M 40 140 A 100 100 0 0 1 240 140" stroke="rgba(255,255,255,0.06)" stroke-width="10" fill="none" stroke-linecap="round"/>
@@ -1295,7 +1931,6 @@ function renderVerdictCardC2(data, parentEl = conversation) {
         <text x="140" y="135" text-anchor="middle" fill="#55524e" font-family="Outfit" font-weight="400" font-size="9" letter-spacing="1.5">INTENSIDAD MÁX</text>
       </svg>
     </div>
-    
     <div class="v-metrics">
       <div class="v-metric">
         <span class="v-metric-label">Carga</span>
@@ -1308,52 +1943,38 @@ function renderVerdictCardC2(data, parentEl = conversation) {
         <span class="v-metric-value">${riskWidth}</span>
       </div>
     </div>
-    
     ${doItems.length > 0 ? `
       <div class="v-section">
         <div class="v-section-label">Hacer</div>
-        <div class="v-list">
-          ${doItems.map(item => `<div class="v-item do">${escapeHtml(item)}</div>`).join('')}
-        </div>
+        <div class="v-list">${doItems.map(item => `<div class="v-item do">${escapeHtml(item)}</div>`).join('')}</div>
       </div>
     ` : ''}
-    
     ${avoidItems.length > 0 ? `
       <div class="v-section">
         <div class="v-section-label">Evitar</div>
-        <div class="v-list">
-          ${avoidItems.map(item => `<div class="v-item avoid">${escapeHtml(item)}</div>`).join('')}
-        </div>
+        <div class="v-list">${avoidItems.map(item => `<div class="v-item avoid">${escapeHtml(item)}</div>`).join('')}</div>
       </div>
     ` : ''}
-    
     ${data.warning ? `<div class="v-warning">${escapeHtml(data.warning)}</div>` : ''}
   `;
   parentEl.appendChild(card);
   scrollToBottom();
 }
 
-// ===============================================
-// PROCESAMIENTO DE RESPUESTAS DEL AGENTE
-// ===============================================
-
 function processCompleteResponse(fullText, agentBubble) {
   if (fullText.includes('<<<VERDICT')) {
     try {
       const verdictMatch = fullText.match(/<<<VERDICT\s*([\s\S]+?)\s*VERDICT>>>/);
       if (!verdictMatch) throw new Error('VERDICT markers not properly closed');
-      
       const verdictData = JSON.parse(verdictMatch[1]);
       const beforeText = fullText.substring(0, fullText.indexOf('<<<VERDICT')).trim();
       const afterText = fullText.substring(fullText.indexOf('VERDICT>>>') + 'VERDICT>>>'.length).trim();
-      
       if (beforeText) {
         agentBubble.content.innerHTML = formatText(beforeText);
       } else {
         agentBubble.container.remove();
       }
       agentBubble.cursor.remove();
-      
       renderVerdictCardC2(verdictData);
       if (afterText) {
         const afterBubble = createAgentBubble();
@@ -1379,42 +2000,35 @@ function processCompleteResponse(fullText, agentBubble) {
 
 async function callAgent(userMessage) {
   messageHistory.push({ role: 'user', content: userMessage });
-  
-  // Guardar mensaje del usuario en DB (excepto mensajes de sistema)
-  if (!userMessage.startsWith('[SISTEMA:')) {
-    await saveMessageToDb('user', userMessage);
-  } else {
-    // Aún así guardamos mensajes de sistema, pero los filtramos al renderizar
-    await saveMessageToDb('user', userMessage);
-  }
-  
+  await saveMessageToDb('user', userMessage);
+
   setAgentState('thinking');
   isStreaming = true;
   sendBtn.disabled = true;
   showTypingDots();
-  
+
   let agentBubble = null;
   let fullText = '';
-  
+
   try {
     const response = await fetch(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: messageHistory }),
     });
-    
+
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       throw new Error(err.error || `Error ${response.status}`);
     }
-    
+
     removeTypingDots();
     agentBubble = createAgentBubble();
-    
+
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
-    
+
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -1443,15 +2057,12 @@ async function callAgent(userMessage) {
         } catch (e) {}
       }
     }
-    
+
     processCompleteResponse(fullText, agentBubble);
     messageHistory.push({ role: 'assistant', content: fullText });
-    
-    // Guardar respuesta del agente en DB
     await saveMessageToDb('assistant', fullText);
-    
     setAgentState('online');
-    
+
   } catch (error) {
     console.error('Error:', error);
     removeTypingDots();
@@ -1472,28 +2083,15 @@ async function callAgent(userMessage) {
 // CONTROL DE FLUJO
 // ===============================================
 
-function startChat() {
-  onboarding.classList.add('hidden');
-  if (messageHistory.length === 0) {
-    setTimeout(() => {
-      callAgent('[SISTEMA: El usuario acaba de abrir la app. Saluda brevemente variando la apertura, y haz tu primera pregunta del check-in del día.]');
-    }, 400);
-  }
-}
-
 async function resetChat() {
   if (!confirm('¿Reiniciar conversación? Empezás una nueva (la anterior queda guardada).')) return;
-  
-  // Crear conversación nueva en DB
   try {
     await createNewConversation();
   } catch (error) {
     console.error('Error creating new conversation:', error);
   }
-  
   messageHistory = [];
   conversation.innerHTML = '<div class="day-marker">Hoy</div>';
-  
   setTimeout(() => {
     callAgent('[SISTEMA: El usuario reinició la conversación. Saluda brevemente variando la apertura y haz tu primera pregunta del check-in.]');
   }, 300);
@@ -1521,6 +2119,11 @@ document.getElementById('passwordInput')?.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') signInWithEmail();
 });
 
+// Listeners onboarding
+document.getElementById('obName').addEventListener('input', validateCurrentStep);
+document.getElementById('obAge').addEventListener('input', validateCurrentStep);
+document.getElementById('obWeight').addEventListener('input', validateCurrentStep);
+
 async function sendMessage() {
   const text = input.value.trim();
   if (!text || isStreaming) return;
@@ -1532,7 +2135,7 @@ async function sendMessage() {
 }
 
 // ===============================================
-// INICIO DE LA APP
+// INICIO
 // ===============================================
 
 checkAuthState();
