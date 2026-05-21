@@ -79,10 +79,11 @@ html, body {
   z-index: 9999;
   padding: 40px 32px;
   animation: splashFadeOut 0.6s ease-in-out 2.4s forwards;
+  pointer-events: none;
 }
 
-.splash.hidden {
-  display: none;
+.splash.gone {
+  display: none !important;
 }
 
 .splash-logo {
@@ -117,7 +118,6 @@ html, body {
 @keyframes splashFadeOut {
   to {
     opacity: 0;
-    visibility: hidden;
   }
 }
 
@@ -1110,7 +1110,7 @@ html, body {
   </div>
 
   <!-- ========== PANTALLA DE LOGIN ========== -->
-  <div id="loginScreen" class="login-screen hidden">
+  <div id="loginScreen" class="login-screen">
 
     <div class="login-top">
       <div class="login-wordmark-svg">
@@ -2243,6 +2243,24 @@ async function sendMessage() {
   sendBtn.disabled = true;
   renderUserMessage(text);
   await callAgent(text);
+}
+
+// ===============================================
+// SPLASH HANDLING
+// ===============================================
+// Cuando termina la animación de fade-out (3 segundos total), ocultar completamente el splash
+const splashEl = document.getElementById('splash');
+if (splashEl) {
+  splashEl.addEventListener('animationend', (e) => {
+    if (e.animationName === 'splashFadeOut') {
+      splashEl.classList.add('gone');
+    }
+  });
+  // Fallback: si por algún motivo no se dispara animationend (ej: animation no termina),
+  // ocultar el splash a los 3.5 segundos sí o sí
+  setTimeout(() => {
+    splashEl.classList.add('gone');
+  }, 3500);
 }
 
 // ===============================================
