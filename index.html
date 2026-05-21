@@ -67,60 +67,6 @@ html, body {
 /* ========== LOGO ANATA SVG ========== */
 /* Los SVGs se cargan desde los símbolos <symbol id="anata-isologo"> y <symbol id="anata-wordmark"> definidos al inicio del body */
 
-/* ========== SPLASH ========== */
-.splash {
-  position: fixed;
-  inset: 0;
-  background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  padding: 40px 32px;
-  animation: splashFadeOut 0.6s ease-in-out 2.4s forwards;
-  pointer-events: none;
-}
-
-.splash.gone {
-  display: none !important;
-}
-
-.splash-logo {
-  width: 80px;
-  height: 200px;
-  color: var(--brand);
-  animation: splashLogoIn 0.8s ease-out;
-  margin-bottom: 40px;
-}
-
-.splash-copy {
-  font-size: 15px;
-  font-weight: 300;
-  color: var(--text-dim);
-  text-align: center;
-  line-height: 1.6;
-  letter-spacing: 0.2px;
-  animation: splashCopyIn 0.8s ease-out 0.4s both;
-  max-width: 280px;
-}
-
-@keyframes splashLogoIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes splashCopyIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes splashFadeOut {
-  to {
-    opacity: 0;
-  }
-}
-
 /* ========== LOGIN SCREEN CON DEGRADADO ========== */
 .login-screen {
   display: flex;
@@ -1101,14 +1047,6 @@ html, body {
 
 <div class="app">
 
-  <!-- ========== SPLASH ========== -->
-  <div id="splash" class="splash">
-    <div class="splash-logo">
-      <svg width="80" height="200" aria-label="ANATA"><use href="#anata-isologo"/></svg>
-    </div>
-    <p class="splash-copy">Tu cuerpo te habla.<br>Yo traduzco.</p>
-  </div>
-
   <!-- ========== PANTALLA DE LOGIN ========== -->
   <div id="loginScreen" class="login-screen">
 
@@ -1176,17 +1114,17 @@ html, body {
         <h2 class="ob-question">Empecemos por lo básico.</h2>
 
         <div class="ob-field">
-          <label class="ob-label">Tu nombre</label>
+          <label for="obName" class="ob-label">Tu nombre</label>
           <input id="obName" class="ob-input" type="text" placeholder="¿Cómo te llamamos?" autocomplete="given-name">
         </div>
 
         <div class="ob-row">
           <div class="ob-field">
-            <label class="ob-label">Edad</label>
+            <label for="obAge" class="ob-label">Edad</label>
             <input id="obAge" class="ob-input" type="number" placeholder="32" min="14" max="100" inputmode="numeric">
           </div>
           <div class="ob-field">
-            <label class="ob-label">Peso <span class="ob-label-optional">opcional</span></label>
+            <label for="obWeight" class="ob-label">Peso <span class="ob-label-optional">opcional</span></label>
             <input id="obWeight" class="ob-input" type="number" placeholder="kg" min="30" max="200" inputmode="decimal" step="0.5">
           </div>
         </div>
@@ -1197,7 +1135,7 @@ html, body {
         <h2 class="ob-question">¿Qué entrenás?</h2>
 
         <div class="ob-field">
-          <label class="ob-label">Tus disciplinas <span class="ob-label-optional">elegí las que practiques</span></label>
+          <label for="obDisciplines" class="ob-label">Tus disciplinas <span class="ob-label-optional">elegí las que practiques</span></label>
           <div id="obDisciplines" class="ob-chips">
             <!-- Se cargan desde Supabase al iniciar onboarding -->
           </div>
@@ -1221,6 +1159,7 @@ html, body {
         <div class="ob-slider-wrap">
           <div id="obFreqValue" class="ob-slider-value">4</div>
           <div class="ob-slider-label">veces por semana</div>
+          <label for="obFrequency" style="position: absolute; left: -9999px;">Frecuencia semanal</label>
           <input id="obFrequency" class="ob-slider" type="range" min="1" max="7" value="4" step="1">
           <div class="ob-slider-ticks">
             <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
@@ -2243,24 +2182,6 @@ async function sendMessage() {
   sendBtn.disabled = true;
   renderUserMessage(text);
   await callAgent(text);
-}
-
-// ===============================================
-// SPLASH HANDLING
-// ===============================================
-// Cuando termina la animación de fade-out (3 segundos total), ocultar completamente el splash
-const splashEl = document.getElementById('splash');
-if (splashEl) {
-  splashEl.addEventListener('animationend', (e) => {
-    if (e.animationName === 'splashFadeOut') {
-      splashEl.classList.add('gone');
-    }
-  });
-  // Fallback: si por algún motivo no se dispara animationend (ej: animation no termina),
-  // ocultar el splash a los 3.5 segundos sí o sí
-  setTimeout(() => {
-    splashEl.classList.add('gone');
-  }, 3500);
 }
 
 // ===============================================
