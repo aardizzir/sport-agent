@@ -1,0 +1,2196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ANATA">
+<meta name="theme-color" content="#0a0a0a">
+<title>ANATA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #15161a;
+  --surface-2: #1f2024;
+  --border: #1f2024;
+  --border-strong: #2a2b30;
+  --text: #f4f1ec;
+  --text-dim: #8a8680;
+  --text-faint: #55524e;
+  --brand: #9CA9B5;
+  --brand-dim: #7d8a96;
+  --brand-bg: rgba(156, 169, 181, 0.1);
+  --green: #D9F264;
+  --yellow: #FFB800;
+  --red: #FF4D4D;
+  --font: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  --app-height: 100dvh;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: fixed;
+  width: 100%;
+  overscroll-behavior: none;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: var(--app-height);
+  max-width: 520px;
+  margin: 0 auto;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.hidden { display: none !important; }
+
+/* ========== LOGO ANATA SVG ========== */
+/* Los SVGs se cargan desde los símbolos <symbol id="anata-isologo"> y <symbol id="anata-wordmark"> definidos al inicio del body */
+
+/* ========== LOGIN SCREEN CON DEGRADADO ========== */
+.login-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: var(--app-height);
+  padding: 0;
+  background: linear-gradient(
+    to bottom,
+    #000000 0%,
+    #0a0b0c 22%,
+    #17191b 40%,
+    #2a2e31 58%,
+    #42484e 72%,
+    #606971 84%,
+    #838f9a 94%,
+    #95a2af 100%
+  );
+  position: relative;
+  text-align: center;
+}
+
+.login-top {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: max(env(safe-area-inset-top), 60px) 32px 20px;
+}
+
+.login-wordmark-svg {
+  width: 140px;
+  height: 32px;
+  color: var(--brand);
+  margin-bottom: 48px;
+}
+
+.login-isologo-svg {
+  width: 110px;
+  height: 280px;
+  color: var(--brand);
+}
+
+.login-bottom {
+  width: 100%;
+  padding: 20px 32px max(env(safe-area-inset-bottom), 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-buttons {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 14px;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 400;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(10, 10, 10, 0.55);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  color: #f4f1ec;
+  transition: all 0.2s;
+}
+
+.btn-login:hover, .btn-login:active {
+  background: rgba(10, 10, 10, 0.7);
+  border-color: rgba(255,255,255,0.28);
+}
+
+.btn-login svg.btn-icon-svg {
+  width: 20px;
+  height: 20px;
+}
+
+.btn-login-primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--bg);
+  font-weight: 500;
+}
+
+.btn-login-primary:hover, .btn-login-primary:active {
+  background: var(--brand-dim);
+  border-color: var(--brand-dim);
+}
+
+.email-form {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.email-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 400;
+  background: rgba(10, 10, 10, 0.55);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  color: #f4f1ec;
+  border: 1px solid rgba(255,255,255,0.18);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.email-input:focus {
+  border-color: var(--brand);
+}
+
+.email-input::placeholder {
+  color: rgba(244, 241, 236, 0.45);
+}
+
+.login-error {
+  color: #ff8080;
+  font-size: 13px;
+  text-align: center;
+  min-height: 18px;
+  margin-top: 4px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+.login-back {
+  margin-top: 12px;
+  background: none;
+  border: none;
+  color: rgba(244, 241, 236, 0.65);
+  font-family: var(--font);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.login-back:hover { color: #f4f1ec; }
+
+.login-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: rgba(244, 241, 236, 0.75);
+  font-size: 14px;
+  padding: 16px 0;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========== ONBOARDING ========== */
+.onboarding {
+  display: flex;
+  flex-direction: column;
+  height: var(--app-height);
+  background: var(--bg);
+  padding: max(env(safe-area-inset-top), 24px) 24px max(env(safe-area-inset-bottom), 24px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ob-progress {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 32px;
+  padding: 0 4px;
+}
+
+.ob-progress-bar {
+  flex: 1;
+  height: 3px;
+  background: var(--border-strong);
+  border-radius: 2px;
+  transition: background 0.3s;
+}
+
+.ob-progress-bar.active {
+  background: var(--brand);
+}
+
+.ob-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ob-step {
+  display: none;
+  flex-direction: column;
+  animation: stepIn 0.4s ease-out;
+}
+
+.ob-step.active {
+  display: flex;
+}
+
+@keyframes stepIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ob-welcome-logo {
+  width: 80px;
+  height: 200px;
+  margin: 0 auto 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ob-title {
+  font-size: 28px;
+  font-weight: 200;
+  letter-spacing: -0.8px;
+  color: var(--text);
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.ob-subtitle {
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--text-dim);
+  line-height: 1.6;
+  text-align: center;
+  margin-bottom: 36px;
+  max-width: 300px;
+  align-self: center;
+}
+
+.ob-question {
+  font-size: 22px;
+  font-weight: 300;
+  color: var(--text);
+  margin-bottom: 28px;
+  letter-spacing: -0.4px;
+  line-height: 1.3;
+}
+
+.ob-field {
+  margin-bottom: 22px;
+}
+
+.ob-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.ob-label-optional {
+  font-size: 10px;
+  color: var(--text-faint);
+  text-transform: none;
+  letter-spacing: 0.3px;
+  margin-left: 6px;
+}
+
+.ob-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-family: var(--font);
+  font-size: 16px;
+  font-weight: 400;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.ob-input:focus {
+  border-color: var(--brand);
+}
+
+.ob-input::placeholder {
+  color: var(--text-faint);
+}
+
+.ob-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Chips multiselect */
+.ob-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ob-chip {
+  padding: 9px 14px;
+  border-radius: 100px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.ob-chip:hover, .ob-chip:active {
+  border-color: var(--text-dim);
+}
+
+.ob-chip.selected {
+  background: var(--brand-bg);
+  border-color: var(--brand);
+  color: var(--brand);
+  font-weight: 500;
+}
+
+/* Slider de frecuencia */
+.ob-slider-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  padding: 24px 20px;
+}
+
+.ob-slider-value {
+  font-size: 56px;
+  font-weight: 200;
+  color: var(--brand);
+  text-align: center;
+  letter-spacing: -2px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.ob-slider-label {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-dim);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 24px;
+}
+
+.ob-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: var(--border-strong);
+  border-radius: 2px;
+  outline: none;
+}
+
+.ob-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--brand);
+  cursor: pointer;
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--brand);
+}
+
+.ob-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--brand);
+  cursor: pointer;
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 0 1px var(--brand);
+}
+
+.ob-slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding: 0 2px;
+}
+
+.ob-slider-ticks span {
+  font-size: 10px;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.ob-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 24px;
+}
+
+.ob-button {
+  background: var(--brand);
+  color: var(--bg);
+  border: none;
+  padding: 16px 24px;
+  border-radius: 100px;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.ob-button:hover, .ob-button:active {
+  background: var(--brand-dim);
+}
+
+.ob-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.ob-button-secondary {
+  background: none;
+  color: var(--text-dim);
+  border: none;
+  padding: 12px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.ob-button-secondary:hover { color: var(--text); }
+
+.ob-error {
+  color: var(--red);
+  font-size: 13px;
+  text-align: center;
+  min-height: 18px;
+  padding: 4px 0;
+}
+
+/* ========== HEADER ========== */
+.header {
+  padding: max(env(safe-area-inset-top), 16px) 20px 14px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,10,10,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bg);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: -0.3px;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  transition: background 0.3s ease;
+}
+
+.avatar.logo-mode {
+  background: var(--bg);
+  border: 1px solid var(--brand);
+  padding: 4px;
+}
+
+.avatar.logo-mode svg {
+  width: 100%;
+  height: 100%;
+}
+
+.avatar.thinking {
+  background: var(--yellow);
+  animation: pulse-thinking 1.4s ease-in-out infinite;
+}
+
+.avatar.error {
+  background: var(--red);
+}
+
+@keyframes pulse-thinking {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 184, 0, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(255, 184, 0, 0); }
+}
+
+.header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.header-title {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  color: var(--text);
+}
+
+.header-status {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 300;
+  margin-top: 2px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover, .btn-icon:active {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.btn-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ========== CONVERSATION ========== */
+.conversation {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scroll-behavior: smooth;
+}
+
+.day-marker {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin: 8px 0 4px;
+  font-weight: 400;
+}
+
+.msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 88%;
+  animation: msgIn 0.25s ease-out;
+}
+
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.msg-user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.msg-agent {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.msg-bubble {
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 15px;
+  line-height: 1.45;
+  font-weight: 300;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.msg-user .msg-bubble {
+  background: var(--brand);
+  color: var(--bg);
+  border-bottom-right-radius: 6px;
+  font-weight: 400;
+}
+
+.msg-agent .msg-bubble {
+  background: var(--surface);
+  color: var(--text);
+  border-bottom-left-radius: 6px;
+}
+
+.msg-agent strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.msg-error .msg-bubble {
+  background: rgba(255, 77, 77, 0.1);
+  color: var(--red);
+  border: 1px solid rgba(255, 77, 77, 0.25);
+}
+
+.msg-time {
+  font-size: 10px;
+  color: var(--text-faint);
+  margin-top: 4px;
+  padding: 0 8px;
+  letter-spacing: 0.3px;
+}
+
+.streaming-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 14px;
+  background: var(--brand);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 0.9s steps(2) infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.typing {
+  align-self: flex-start;
+  background: var(--surface);
+  padding: 14px 18px;
+  border-radius: 18px;
+  border-bottom-left-radius: 6px;
+  display: flex;
+  gap: 4px;
+}
+
+.typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  animation: dot 1.4s infinite ease-in-out;
+}
+
+.typing span:nth-child(2) { animation-delay: 0.2s; }
+.typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* ========== VERDICT CARD ========== */
+.verdict {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  padding: 18px;
+  margin: 4px 0;
+  max-width: 100%;
+  align-self: stretch;
+  animation: msgIn 0.35s ease-out;
+}
+
+.v-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.v-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.04);
+  padding: 6px 12px;
+  border-radius: 100px;
+}
+
+.v-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.v-status-dot.go { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.v-status-dot.caution { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
+.v-status-dot.stop { background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+.v-status-label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.v-timestamp {
+  font-size: 10px;
+  color: var(--text-faint);
+  letter-spacing: 0.5px;
+}
+
+.v-gauge {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.v-gauge svg { width: 100%; max-width: 280px; height: auto; }
+
+.v-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 10px;
+}
+
+.v-metric {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.v-metric-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  width: 80px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 400;
+}
+
+.v-metric-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.v-metric-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.v-metric-value {
+  font-size: 11px;
+  color: var(--text-dim);
+  width: 28px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+.v-section { margin-bottom: 12px; }
+
+.v-section-label {
+  font-size: 10px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.v-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.v-item {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text);
+  padding-left: 16px;
+  position: relative;
+  font-weight: 300;
+}
+
+.v-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.v-item.do::before { background: var(--green); }
+.v-item.avoid::before { background: var(--red); }
+
+.v-warning {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 184, 0, 0.08);
+  border-left: 2px solid var(--yellow);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.4;
+  font-weight: 400;
+}
+
+/* ========== INPUT BAR ========== */
+.input-bar {
+  padding: 12px 16px max(env(safe-area-inset-bottom), 16px);
+  border-top: 1px solid var(--border);
+  background: rgba(10,10,10,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.input-wrap {
+  flex: 1;
+  background: var(--surface);
+  border-radius: 22px;
+  display: flex;
+  align-items: flex-end;
+  padding: 8px 12px;
+  min-height: 44px;
+  border: 1px solid var(--border-strong);
+  transition: border-color 0.15s;
+}
+
+.input-wrap:focus-within {
+  border-color: var(--brand);
+}
+
+#inputField {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 300;
+  resize: none;
+  outline: none;
+  max-height: 100px;
+  line-height: 1.4;
+  padding: 6px 4px;
+}
+
+#inputField::placeholder {
+  color: var(--text-faint);
+}
+
+.send-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--brand);
+  border: none;
+  color: var(--bg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+.send-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.send-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ========== SCROLLBAR ========== */
+.conversation::-webkit-scrollbar { width: 4px; }
+.conversation::-webkit-scrollbar-track { background: transparent; }
+.conversation::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
+
+</style>
+</head>
+<body>
+
+<!-- SVG SPRITES: Isologo + Wordmark ANATA (originales del diseñador) -->
+<svg width="0" height="0" style="position:absolute;" aria-hidden="true">
+  <defs>
+    <!-- Isologo ANATA: 3 A apiladas verticalmente -->
+    <symbol id="anata-isologo" viewBox="280 140 220 530">
+      <path fill="currentColor" d="M454,471.12v-91.88c0-10.15-2.46-19.14-7.37-26.96-4.91-7.82-11.53-13.77-19.85-17.85h0c-8.32-4.08-17.64-6.12-27.46-6.12s-18.89,2.04-27.21,6.12-14.94,10.03-19.85,17.85c-4.9,7.82-7.36,16.81-7.36,26.96v91.88h22.22v-91.13c0-6.66,1.46-12.28,4.37-16.85,2.91-4.58,6.82-7.99,11.73-10.24,4.91-2.25,10.11-3.37,16.1-3.37s11.44,1.12,16.35,3.37c4.91,2.25,8.82,5.66,11.73,10.24,2.91,4.57,4.37,10.19,4.37,16.85v91.13h22.22Z"/>
+      <path fill="currentColor" d="M484.55,568.15l-30.55-12.97v-21.27c0-10.15-2.46-19.14-7.37-26.96-4.91-7.82-11.53-13.77-19.85-17.85h0c-8.32-4.08-17.64-6.12-27.46-6.12s-18.89,2.04-27.21,6.12-14.94,10.03-19.85,17.85c-4.9,7.82-7.36,16.81-7.36,26.96v91.88h22.22v-91.13c0-6.66,1.46-12.28,4.37-16.85,2.91-4.58,6.82-7.99,11.73-10.24,4.91-2.25,10.11-3.37,16.1-3.37s11.44,1.12,16.35,3.37c4.91,2.25,8.82,5.66,11.73,10.24,2.91,4.57,4.37,10.19,4.37,16.85v11.08l-32.28-13.7-8.94,21.05,41.22,17.49v55.2h22.22v-45.77l21.61,9.17,8.94-21.05Z"/>
+      <path fill="currentColor" d="M344.91,317.01h22.22v-55.22l41.19-17.48-8.94-21.05-32.25,13.69v-11.06c0-6.66,1.46-12.28,4.37-16.85,2.91-4.58,6.82-7.99,11.73-10.24,4.91-2.25,10.11-3.37,16.1-3.37s11.44,1.12,16.35,3.37c4.91,2.25,8.82,5.66,11.73,10.24,2.91,4.57,4.37,10.19,4.37,16.85v91.13h22.22v-91.88c0-10.15-2.46-19.14-7.37-26.96-4.91-7.82-11.53-13.77-19.85-17.85h0c-8.32-4.08-17.64-6.12-27.46-6.12s-18.89,2.04-27.21,6.12-14.94,10.03-19.85,17.85c-4.9,7.82-7.36,16.81-7.36,26.96v21.25l-30.57,12.98,8.94,21.05,21.64-9.18v45.79Z"/>
+    </symbol>
+    <!-- Wordmark ANATA (logo tipográfico) -->
+    <symbol id="anata-wordmark" viewBox="135 345 490 110">
+      <path fill="currentColor" d="M185.08,350.58h20.56l41.12,98.83h-20.08l-33.79-85.92h4.78l-33.63,85.92h-20.24l41.28-98.83ZM171.69,409.97h45.9l6.06,15.06h-58.01l6.06-15.06Z"/>
+      <path fill="currentColor" d="M266.84,350.58h18.33l47.02,72.01h-3.67v-72.01h19.13v98.83h-17.37l-47.81-72.72h3.51v72.72h-19.13v-98.83Z"/>
+      <path fill="currentColor" d="M409.32,350.58h20.56l41.12,98.83h-20.08l-33.79-85.92h4.78l-33.63,85.92h-20.24l41.28-98.83ZM395.94,409.97h45.9l6.06,15.06h-58.01l6.06-15.06Z"/>
+      <path fill="currentColor" d="M471,350.58h82.24v15.49h-82.24v-15.49ZM502.56,362.78h19.13v86.64h-19.13v-86.64Z"/>
+      <path fill="currentColor" d="M594.52,350.58h20.56l41.12,98.83h-20.08l-33.79-85.92h4.78l-33.63,85.92h-20.24l41.28-98.83ZM581.13,409.97h45.9l6.06,15.06h-58.01l6.06-15.06Z"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="app">
+
+  <!-- ========== PANTALLA DE LOGIN ========== -->
+  <div id="loginScreen" class="login-screen">
+
+    <div class="login-top">
+      <div class="login-wordmark-svg">
+        <svg width="140" height="32" viewBox="135 345 490 110" aria-label="ANATA">
+          <use href="#anata-wordmark"/>
+        </svg>
+      </div>
+      <div class="login-isologo-svg">
+        <svg width="110" height="280" aria-label="ANATA"><use href="#anata-isologo"/></svg>
+      </div>
+    </div>
+
+    <div class="login-bottom">
+      <div id="loginButtons" class="login-buttons">
+        <button class="btn-login" onclick="signInWithGoogle()">
+          <svg class="btn-icon-svg" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continuar con Google
+        </button>
+        <button class="btn-login" onclick="showEmailForm()">
+          <svg class="btn-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>
+          Continuar con email
+        </button>
+      </div>
+
+      <div id="emailForm" class="email-form hidden">
+        <input id="emailInput" class="email-input" type="email" placeholder="tu@email.com" autocomplete="email">
+        <input id="passwordInput" class="email-input" type="password" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="current-password">
+        <button class="btn-login" onclick="signInWithEmail()" style="background: rgba(149, 162, 175, 0.95); color: #0a0a0a; font-weight: 500; border-color: var(--brand);">Entrar / Crear cuenta</button>
+        <div id="loginError" class="login-error"></div>
+        <button class="login-back" onclick="hideEmailForm()">← Volver</button>
+      </div>
+
+      <div id="loginLoading" class="login-loading hidden">
+        <div class="spinner"></div>
+        <span>Conectando...</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========== ONBOARDING ========== -->
+  <div id="onboarding" class="onboarding hidden">
+    <div class="ob-progress">
+      <div class="ob-progress-bar active" data-step="0"></div>
+      <div class="ob-progress-bar" data-step="1"></div>
+      <div class="ob-progress-bar" data-step="2"></div>
+      <div class="ob-progress-bar" data-step="3"></div>
+    </div>
+
+    <div class="ob-content">
+
+      <!-- STEP 0: Welcome -->
+      <div class="ob-step active" data-step="0">
+        <div class="ob-welcome-logo" style="color: var(--brand);">
+          <svg width="80" height="200" aria-label="ANATA"><use href="#anata-isologo"/></svg>
+        </div>
+        <h1 class="ob-title">Hola.</h1>
+        <p class="ob-subtitle">Soy ANATA. Antes de empezar, necesito conocerte un poco.</p>
+      </div>
+
+      <!-- STEP 1: Identidad -->
+      <div class="ob-step" data-step="1">
+        <h2 class="ob-question">Empecemos por lo básico.</h2>
+
+        <div class="ob-field">
+          <label for="obName" class="ob-label">Tu nombre</label>
+          <input id="obName" class="ob-input" type="text" placeholder="¿Cómo te llamamos?" autocomplete="given-name">
+        </div>
+
+        <div class="ob-row">
+          <div class="ob-field">
+            <label for="obAge" class="ob-label">Edad</label>
+            <input id="obAge" class="ob-input" type="number" placeholder="32" min="14" max="100" inputmode="numeric">
+          </div>
+          <div class="ob-field">
+            <label for="obWeight" class="ob-label">Peso <span class="ob-label-optional">opcional</span></label>
+            <input id="obWeight" class="ob-input" type="number" placeholder="kg" min="30" max="200" inputmode="decimal" step="0.5">
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2: Disciplinas + Experiencia -->
+      <div class="ob-step" data-step="2">
+        <h2 class="ob-question">¿Qué entrenás?</h2>
+
+        <div class="ob-field">
+          <label for="obDisciplines" class="ob-label">Tus disciplinas <span class="ob-label-optional">elegí las que practiques</span></label>
+          <div id="obDisciplines" class="ob-chips">
+            <!-- Se cargan desde Supabase al iniciar onboarding -->
+          </div>
+        </div>
+
+        <div class="ob-field">
+          <label class="ob-label">Tu experiencia</label>
+          <div class="ob-chips">
+            <div class="ob-chip" data-experience="<1">Menos de 1 año</div>
+            <div class="ob-chip" data-experience="1-3">1 a 3 años</div>
+            <div class="ob-chip" data-experience="3-7">3 a 7 años</div>
+            <div class="ob-chip" data-experience="+7">Más de 7 años</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: Frecuencia -->
+      <div class="ob-step" data-step="3">
+        <h2 class="ob-question">¿Con qué frecuencia entrenás?</h2>
+
+        <div class="ob-slider-wrap">
+          <div id="obFreqValue" class="ob-slider-value">4</div>
+          <div class="ob-slider-label">veces por semana</div>
+          <label for="obFrequency" style="position: absolute; left: -9999px;">Frecuencia semanal</label>
+          <input id="obFrequency" class="ob-slider" type="range" min="1" max="7" value="4" step="1">
+          <div class="ob-slider-ticks">
+            <span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="ob-footer">
+      <div id="obError" class="ob-error"></div>
+      <button id="obNext" class="ob-button" onclick="onboardingNext()">Empezar</button>
+      <button id="obBack" class="ob-button-secondary hidden" onclick="onboardingBack()">← Atrás</button>
+    </div>
+  </div>
+
+  <!-- ========== APP PRINCIPAL ========== -->
+  <div id="appMain" class="hidden" style="display:none; flex-direction:column; height:100%;">
+    <div class="header">
+      <div id="avatar" class="avatar logo-mode" style="color: var(--brand);">
+        <svg width="100%" height="100%" viewBox="280 140 220 530" preserveAspectRatio="xMidYMid meet"><use href="#anata-isologo"/></svg>
+      </div>
+      <div class="header-info">
+        <div id="headerName" class="header-title">ANATA</div>
+        <div id="headerStatus" class="header-status">● En línea</div>
+      </div>
+      <div class="header-actions">
+        <button class="btn-icon" onclick="resetChat()" title="Nueva conversación">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+        </button>
+        <button class="btn-icon" onclick="signOut()" title="Cerrar sesión">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="conversation" class="conversation">
+      <div class="day-marker">Hoy</div>
+    </div>
+
+    <div class="input-bar">
+      <div class="input-wrap">
+        <textarea id="inputField" rows="1" placeholder="Escribí tu mensaje..." autocomplete="off"></textarea>
+      </div>
+      <button id="sendBtn" class="send-btn" onclick="sendMessage()" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ===============================================
+// CONFIGURACIÓN
+// ===============================================
+
+const SUPABASE_URL = 'https://thmauqyngmlmgrfnldxj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRobWF1cXluZ21sbWdyZm5sZHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwMjE5NzIsImV4cCI6MjA5MzU5Nzk3Mn0._ZwZORe4POzoi6hX9NBxgHnXlK8L7KxmnaWAnk2HpxI';
+const WORKER_URL = 'https://sport-agent-api.a-ardizzir.workers.dev';
+
+// ===============================================
+// NO TOCAR DEBAJO DE ESTA LÍNEA
+// ===============================================
+
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Estado global
+let currentUser = null;
+let currentProfile = null;
+let currentConversationId = null;
+let messageHistory = [];
+let isStreaming = false;
+let availableDisciplines = [];
+let onboardingData = {
+  name: '',
+  age: null,
+  weight_kg: null,
+  disciplines: [],
+  experience: null,
+  frequency_per_week: 4
+};
+let onboardingStep = 0;
+
+// Referencias DOM
+const loginScreen = document.getElementById('loginScreen');
+const loginButtons = document.getElementById('loginButtons');
+const emailForm = document.getElementById('emailForm');
+const loginLoading = document.getElementById('loginLoading');
+const loginError = document.getElementById('loginError');
+const onboarding = document.getElementById('onboarding');
+const appMain = document.getElementById('appMain');
+const conversation = document.getElementById('conversation');
+const input = document.getElementById('inputField');
+const sendBtn = document.getElementById('sendBtn');
+const avatar = document.getElementById('avatar');
+const headerName = document.getElementById('headerName');
+const headerStatus = document.getElementById('headerStatus');
+
+// ========== FIX TECLADO iOS ==========
+function updateAppHeight() {
+  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty('--app-height', h + 'px');
+}
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => {
+    updateAppHeight();
+    requestAnimationFrame(() => {
+      if (conversation) conversation.scrollTop = conversation.scrollHeight;
+    });
+  });
+}
+window.addEventListener('resize', updateAppHeight);
+window.addEventListener('orientationchange', () => setTimeout(updateAppHeight, 200));
+updateAppHeight();
+
+input.addEventListener('focus', () => {
+  setTimeout(() => {
+    updateAppHeight();
+    conversation.scrollTop = conversation.scrollHeight;
+  }, 300);
+});
+
+input.addEventListener('blur', () => {
+  setTimeout(() => {
+    updateAppHeight();
+    window.scrollTo(0, 0);
+  }, 100);
+});
+
+// ===============================================
+// AUTENTICACIÓN
+// ===============================================
+
+async function checkAuthState() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await onUserAuthenticated();
+  } else {
+    showLoginScreen();
+  }
+}
+
+function showLoginScreen() {
+  loginScreen.classList.remove('hidden');
+  onboarding.classList.add('hidden');
+  appMain.style.display = 'none';
+  loginButtons.classList.remove('hidden');
+  emailForm.classList.add('hidden');
+  loginLoading.classList.add('hidden');
+}
+
+function showLoginLoading() {
+  loginButtons.classList.add('hidden');
+  emailForm.classList.add('hidden');
+  loginLoading.classList.remove('hidden');
+}
+
+function showEmailForm() {
+  loginButtons.classList.add('hidden');
+  emailForm.classList.remove('hidden');
+  loginError.textContent = '';
+  document.getElementById('emailInput').focus();
+}
+
+function hideEmailForm() {
+  emailForm.classList.add('hidden');
+  loginButtons.classList.remove('hidden');
+  loginError.textContent = '';
+}
+
+async function signInWithGoogle() {
+  showLoginLoading();
+  try {
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + window.location.pathname }
+    });
+    if (error) throw error;
+  } catch (error) {
+    console.error('Google sign in error:', error);
+    showLoginScreen();
+    loginError.textContent = error.message || 'Error al conectar con Google';
+  }
+}
+
+async function signInWithEmail() {
+  const email = document.getElementById('emailInput').value.trim();
+  const password = document.getElementById('passwordInput').value;
+  if (!email || !password) { loginError.textContent = 'Completá email y contraseña'; return; }
+  if (password.length < 6) { loginError.textContent = 'La contraseña debe tener al menos 6 caracteres'; return; }
+  loginError.textContent = '';
+  showLoginLoading();
+  try {
+    let { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error && error.message.toLowerCase().includes('invalid')) {
+      const result = await supabaseClient.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin + window.location.pathname } });
+      if (result.error) throw result.error;
+      data = result.data;
+    } else if (error) {
+      throw error;
+    }
+    if (data.user) {
+      currentUser = data.user;
+      await onUserAuthenticated();
+    }
+  } catch (error) {
+    console.error('Email sign in error:', error);
+    showLoginScreen();
+    showEmailForm();
+    loginError.textContent = error.message || 'Error al iniciar sesión';
+  }
+}
+
+async function signOut() {
+  if (!confirm('¿Cerrar sesión?')) return;
+  await supabaseClient.auth.signOut();
+  currentUser = null;
+  currentProfile = null;
+  currentConversationId = null;
+  messageHistory = [];
+  conversation.innerHTML = '<div class="day-marker">Hoy</div>';
+  showLoginScreen();
+}
+
+supabaseClient.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_IN' && session) {
+    currentUser = session.user;
+    await onUserAuthenticated();
+  } else if (event === 'SIGNED_OUT') {
+    currentUser = null;
+    currentProfile = null;
+    showLoginScreen();
+  }
+});
+
+// ===============================================
+// AFTER LOGIN: decidir si va a onboarding o chat
+// ===============================================
+
+async function onUserAuthenticated() {
+  loginScreen.classList.add('hidden');
+
+  // Cargar profile del usuario
+  try {
+    const { data: profile, error } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', currentUser.id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error loading profile:', error);
+    }
+
+    currentProfile = profile;
+
+    if (!profile || !profile.onboarding_completed) {
+      // Primera vez o no completó onboarding → mostrar onboarding
+      await startOnboarding();
+    } else {
+      // Usuario con onboarding completo → ir al chat
+      await enterChatApp();
+    }
+  } catch (error) {
+    console.error('Error in onUserAuthenticated:', error);
+    await startOnboarding();
+  }
+}
+
+// ===============================================
+// ONBOARDING
+// ===============================================
+
+async function startOnboarding() {
+  onboarding.classList.remove('hidden');
+  appMain.style.display = 'none';
+
+  // Pre-llenar nombre si vino de Google
+  const meta = currentUser.user_metadata || {};
+  const suggestedName = meta.full_name || meta.name || currentUser.email?.split('@')[0] || '';
+  document.getElementById('obName').value = suggestedName;
+  onboardingData.name = suggestedName;
+
+  // Cargar disciplinas del catálogo
+  await loadDisciplines();
+
+  // Inicializar slider de frecuencia
+  setupFrequencySlider();
+
+  // Setup de chips de experiencia (selección única)
+  setupExperienceChips();
+
+  onboardingStep = 0;
+  showOnboardingStep(0);
+}
+
+async function loadDisciplines() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('disciplines')
+      .select('id, name')
+      .order('name');
+
+    if (error) throw error;
+    availableDisciplines = data || [];
+    renderDisciplineChips();
+  } catch (error) {
+    console.error('Error loading disciplines:', error);
+    // Fallback: lista hardcodeada por si falla la query
+    availableDisciplines = [
+      { id: 'fallback-1', name: 'Fútbol' }, { id: 'fallback-2', name: 'Running' },
+      { id: 'fallback-3', name: 'Gimnasio' }, { id: 'fallback-4', name: 'Crossfit' },
+      { id: 'fallback-5', name: 'Ciclismo/MTB' }, { id: 'fallback-6', name: 'Natación' }
+    ];
+    renderDisciplineChips();
+  }
+}
+
+function renderDisciplineChips() {
+  const container = document.getElementById('obDisciplines');
+  container.innerHTML = availableDisciplines.map(d =>
+    `<div class="ob-chip" data-discipline-id="${d.id}" data-discipline-name="${escapeHtml(d.name)}">${escapeHtml(d.name)}</div>`
+  ).join('');
+
+  // Click handler para multiselect
+  container.querySelectorAll('.ob-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      chip.classList.toggle('selected');
+      updateOnboardingDisciplines();
+      validateCurrentStep();
+    });
+  });
+}
+
+function updateOnboardingDisciplines() {
+  const selected = document.querySelectorAll('#obDisciplines .ob-chip.selected');
+  onboardingData.disciplines = Array.from(selected).map(chip => ({
+    id: chip.dataset.disciplineId,
+    name: chip.dataset.disciplineName
+  }));
+}
+
+function setupExperienceChips() {
+  const chips = document.querySelectorAll('[data-experience]');
+  chips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      chips.forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      onboardingData.experience = chip.dataset.experience;
+      validateCurrentStep();
+    });
+  });
+}
+
+function setupFrequencySlider() {
+  const slider = document.getElementById('obFrequency');
+  const valueDisplay = document.getElementById('obFreqValue');
+  slider.addEventListener('input', () => {
+    onboardingData.frequency_per_week = parseInt(slider.value);
+    valueDisplay.textContent = slider.value;
+  });
+}
+
+function showOnboardingStep(step) {
+  document.querySelectorAll('.ob-step').forEach(s => s.classList.remove('active'));
+  document.querySelector(`.ob-step[data-step="${step}"]`).classList.add('active');
+
+  // Actualizar progress bars
+  document.querySelectorAll('.ob-progress-bar').forEach((bar, idx) => {
+    bar.classList.toggle('active', idx <= step);
+  });
+
+  // Texto del botón principal
+  const btnNext = document.getElementById('obNext');
+  const btnBack = document.getElementById('obBack');
+
+  if (step === 0) {
+    btnNext.textContent = 'Empezar';
+    btnBack.classList.add('hidden');
+  } else if (step === 3) {
+    btnNext.textContent = 'Listo';
+    btnBack.classList.remove('hidden');
+  } else {
+    btnNext.textContent = 'Continuar';
+    btnBack.classList.remove('hidden');
+  }
+
+  // Validar paso actual
+  validateCurrentStep();
+
+  // Focus en primer input del paso si aplica
+  if (step === 1) {
+    setTimeout(() => document.getElementById('obName').focus(), 200);
+  }
+}
+
+function validateCurrentStep() {
+  const btn = document.getElementById('obNext');
+  const errorEl = document.getElementById('obError');
+  errorEl.textContent = '';
+  btn.disabled = false;
+
+  if (onboardingStep === 0) {
+    btn.disabled = false;
+  } else if (onboardingStep === 1) {
+    const name = document.getElementById('obName').value.trim();
+    const age = parseInt(document.getElementById('obAge').value);
+    if (!name || !age || age < 14 || age > 100) {
+      btn.disabled = true;
+    }
+  } else if (onboardingStep === 2) {
+    if (onboardingData.disciplines.length === 0 || !onboardingData.experience) {
+      btn.disabled = true;
+    }
+  } else if (onboardingStep === 3) {
+    btn.disabled = false;
+  }
+}
+
+async function onboardingNext() {
+  const errorEl = document.getElementById('obError');
+  errorEl.textContent = '';
+
+  // Capturar datos del paso actual
+  if (onboardingStep === 1) {
+    const name = document.getElementById('obName').value.trim();
+    const age = parseInt(document.getElementById('obAge').value);
+    const weight = parseFloat(document.getElementById('obWeight').value);
+    if (!name) { errorEl.textContent = 'Necesito tu nombre'; return; }
+    if (!age || age < 14 || age > 100) { errorEl.textContent = 'Edad inválida'; return; }
+    onboardingData.name = name;
+    onboardingData.age = age;
+    onboardingData.weight_kg = weight && weight >= 30 && weight <= 200 ? weight : null;
+  }
+
+  if (onboardingStep < 3) {
+    onboardingStep++;
+    showOnboardingStep(onboardingStep);
+  } else {
+    // Último paso: guardar todo y entrar al chat
+    await finishOnboarding();
+  }
+}
+
+function onboardingBack() {
+  if (onboardingStep > 0) {
+    onboardingStep--;
+    showOnboardingStep(onboardingStep);
+  }
+}
+
+async function finishOnboarding() {
+  const btn = document.getElementById('obNext');
+  const errorEl = document.getElementById('obError');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  errorEl.textContent = '';
+
+  try {
+    // 1. Upsert profile con todos los datos
+    const profileData = {
+      id: currentUser.id,
+      email: currentUser.email,
+      name: onboardingData.name,
+      age: onboardingData.age,
+      weight_kg: onboardingData.weight_kg,
+      frequency_per_week: onboardingData.frequency_per_week,
+      onboarding_completed: true,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error: profileError } = await supabaseClient
+      .from('profiles')
+      .upsert(profileData);
+
+    if (profileError) throw profileError;
+
+    // 2. Insertar disciplinas en user_disciplines
+    if (onboardingData.disciplines.length > 0) {
+      // Borrar las anteriores por si las hay
+      await supabaseClient
+        .from('user_disciplines')
+        .delete()
+        .eq('user_id', currentUser.id);
+
+      // Mapear experiencia (años) a level (constraint de DB: principiante/intermedio/amateur_serio/avanzado)
+      const experienceToLevel = {
+        '<1': 'principiante',
+        '1-3': 'intermedio',
+        '3-7': 'amateur_serio',
+        '+7': 'avanzado'
+      };
+      const levelValue = experienceToLevel[onboardingData.experience] || 'intermedio';
+
+      const disciplinesData = onboardingData.disciplines.map((d, idx) => ({
+        user_id: currentUser.id,
+        discipline_id: d.id,
+        is_primary: idx === 0,
+        level: levelValue
+      }));
+
+      const { error: discError } = await supabaseClient
+        .from('user_disciplines')
+        .insert(disciplinesData);
+
+      if (discError) {
+        console.error('Error inserting disciplines:', discError);
+        // No es crítico, seguimos
+      }
+    }
+
+    // 3. Cargar el profile actualizado
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('*')
+      .eq('id', currentUser.id)
+      .single();
+
+    currentProfile = profile;
+
+    // 4. Entrar al chat con mensaje personalizado
+    await enterChatApp(true);
+
+  } catch (error) {
+    console.error('Error finishing onboarding:', error);
+    errorEl.textContent = 'Hubo un error al guardar. Intentalo de nuevo.';
+    btn.disabled = false;
+    btn.textContent = 'Listo';
+  }
+}
+
+// ===============================================
+// ENTRAR AL CHAT
+// ===============================================
+
+async function enterChatApp(justFinishedOnboarding = false) {
+  onboarding.classList.add('hidden');
+  appMain.style.display = 'flex';
+  appMain.classList.remove('hidden');
+
+  setupUserHeader();
+
+  if (justFinishedOnboarding) {
+    // Crear conversación nueva y disparar primer mensaje personalizado
+    await createNewConversation();
+    setTimeout(() => triggerFirstMessage(), 600);
+  } else {
+    // Usuario recurrente: cargar conversación existente o crear nueva
+    await loadOrCreateConversation();
+  }
+}
+
+function setupUserHeader() {
+  const displayName = currentProfile?.name || currentUser.email?.split('@')[0] || 'Usuario';
+  headerName.textContent = displayName;
+  // Avatar mantiene el logo de ANATA (es la "marca" del agente, no del usuario)
+}
+
+async function loadOrCreateConversation() {
+  try {
+    const { data: conversations, error } = await supabaseClient
+      .from('conversations')
+      .select('id')
+      .eq('user_id', currentUser.id)
+      .order('updated_at', { ascending: false })
+      .limit(1);
+
+    if (error) throw error;
+
+    if (conversations && conversations.length > 0) {
+      currentConversationId = conversations[0].id;
+      await loadMessages(currentConversationId);
+
+      if (messageHistory.length === 0) {
+        setTimeout(() => triggerFirstMessage(), 400);
+      }
+    } else {
+      await createNewConversation();
+      setTimeout(() => triggerFirstMessage(), 400);
+    }
+  } catch (error) {
+    console.error('Error loading conversation:', error);
+  }
+}
+
+async function createNewConversation() {
+  const { data, error } = await supabaseClient
+    .from('conversations')
+    .insert({ user_id: currentUser.id })
+    .select()
+    .single();
+  if (error) throw error;
+  currentConversationId = data.id;
+  return data;
+}
+
+async function loadMessages(conversationId) {
+  const { data, error } = await supabaseClient
+    .from('messages')
+    .select('role, content, created_at')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true });
+
+  if (error) { console.error('Error loading messages:', error); return; }
+
+  messageHistory = data.map(m => ({ role: m.role, content: m.content }));
+
+  for (const msg of messageHistory) {
+    if (msg.role === 'user' && !msg.content.startsWith('[SISTEMA:')) {
+      renderUserMessage(msg.content);
+    } else if (msg.role === 'assistant') {
+      const bubble = createAgentBubble();
+      processCompleteResponse(msg.content, bubble);
+    }
+  }
+}
+
+async function saveMessageToDb(role, content) {
+  if (!currentConversationId || !currentUser) return;
+  try {
+    // Inserción de mensaje (no incluye user_id porque la conversación ya tiene el dueño)
+    const { error: insertError } = await supabaseClient.from('messages').insert({
+      conversation_id: currentConversationId,
+      role: role,
+      content: content
+    });
+
+    if (insertError) {
+      // Si falla, lo loggeamos con detalle pero no rompe el flujo
+      console.error('saveMessageToDb insert error:', insertError);
+      console.error('Failed payload:', { conversation_id: currentConversationId, role: role, content_length: content?.length });
+    }
+
+    // Actualizar timestamp de la conversación
+    const { error: updateError } = await supabaseClient.from('conversations')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', currentConversationId);
+
+    if (updateError) {
+      console.error('Conversation update error:', updateError);
+    }
+  } catch (error) {
+    console.error('Error saving message:', error);
+  }
+}
+
+// ===============================================
+// PRIMER MENSAJE PERSONALIZADO
+// ===============================================
+
+function buildSystemContextMessage() {
+  // Construye el mensaje contextual con los datos del usuario para que ANATA salude personalizado
+  if (!currentProfile) {
+    return '[SISTEMA: Es el primer mensaje del usuario. Saluda brevemente y haz tu primera pregunta del check-in del día.]';
+  }
+
+  const name = currentProfile.name || 'el usuario';
+  const age = currentProfile.age ? `${currentProfile.age} años` : null;
+  const freq = currentProfile.frequency_per_week || null;
+
+  // Disciplinas del usuario
+  const disciplinesContext = onboardingData.disciplines.length > 0
+    ? onboardingData.disciplines.map(d => d.name).join(', ')
+    : null;
+
+  // Mapeo de experiencia a descripción del nivel (para que el agente calibre tono)
+  const experienceDescription = {
+    '<1': 'principiante (menos de 1 año practicando, necesita explicaciones claras y sin tecnicismos)',
+    '1-3': 'intermedio (1 a 3 años, ya domina lo básico)',
+    '3-7': 'amateur serio (3 a 7 años, deportista comprometido con buena base técnica, hablale con criterio sin sobre-explicar)',
+    '+7': 'avanzado (más de 7 años, podés ser técnico y directo, respeta su autonomía)'
+  };
+  const experienceContext = experienceDescription[onboardingData.experience] || null;
+
+  let context = `[SISTEMA: Primera vez del usuario en la app. Datos del onboarding:`;
+  context += `\n- Nombre: ${name}`;
+  if (age) context += `\n- Edad: ${age}`;
+  if (disciplinesContext) context += `\n- Disciplinas: ${disciplinesContext}`;
+  if (experienceContext) context += `\n- Nivel: ${experienceContext}`;
+  if (freq) context += `\n- Frecuencia: ${freq} veces/semana`;
+
+  context += `\n\nSaluda usando el nombre del usuario, menciona brevemente que ves sus disciplinas y frecuencia (sin enumerar todo, integralo natural), y hacé tu primera pregunta del check-in del día (cómo se siente, cómo durmió, qué tal el cuerpo hoy). Adaptá el tono y profundidad al nivel del deportista. Sé breve, cálido y directo.]`;
+
+  return context;
+}
+
+function triggerFirstMessage() {
+  const systemMsg = buildSystemContextMessage();
+  callAgent(systemMsg);
+}
+
+// ===============================================
+// HELPERS DE UI
+// ===============================================
+
+function getTime() {
+  const d = new Date();
+  return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+}
+
+function getDateLabel() {
+  const d = new Date();
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${d.getDate()} ${meses[d.getMonth()]}`.toUpperCase();
+}
+
+function scrollToBottom(smooth = true) {
+  setTimeout(() => {
+    conversation.scrollTo({ top: conversation.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+  }, 50);
+}
+
+function setAgentState(state) {
+  avatar.classList.remove('thinking', 'error');
+  if (state === 'thinking') {
+    avatar.classList.add('thinking');
+    headerStatus.textContent = '● Pensando...';
+  } else if (state === 'error') {
+    avatar.classList.add('error');
+    headerStatus.textContent = '● Error de conexión';
+  } else {
+    headerStatus.textContent = '● En línea';
+  }
+}
+
+function formatText(text) {
+  return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+}
+
+function escapeHtml(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+}
+
+function renderUserMessage(text) {
+  const msg = document.createElement('div');
+  msg.className = 'msg msg-user';
+  msg.innerHTML = `<div class="msg-bubble">${escapeHtml(text)}</div><div class="msg-time">${getTime()}</div>`;
+  conversation.appendChild(msg);
+  scrollToBottom();
+}
+
+function createAgentBubble() {
+  const msg = document.createElement('div');
+  msg.className = 'msg msg-agent';
+  msg.innerHTML = `<div class="msg-bubble"><span class="msg-content"></span><span class="streaming-cursor"></span></div><div class="msg-time">${getTime()}</div>`;
+  conversation.appendChild(msg);
+  scrollToBottom();
+  return { container: msg, content: msg.querySelector('.msg-content'), cursor: msg.querySelector('.streaming-cursor') };
+}
+
+function showTypingDots() {
+  const t = document.createElement('div');
+  t.className = 'typing';
+  t.id = 'typingIndicator';
+  t.innerHTML = '<span></span><span></span><span></span>';
+  conversation.appendChild(t);
+  scrollToBottom();
+}
+
+function removeTypingDots() {
+  const t = document.getElementById('typingIndicator');
+  if (t) t.remove();
+}
+
+function renderError(message) {
+  const msg = document.createElement('div');
+  msg.className = 'msg msg-agent msg-error';
+  msg.innerHTML = `<div class="msg-bubble">⚠ ${escapeHtml(message)}</div><div class="msg-time">${getTime()}</div>`;
+  conversation.appendChild(msg);
+  scrollToBottom();
+}
+
+// ===============================================
+// VERDICT CARD
+// ===============================================
+
+function renderVerdictCardC2(data, parentEl = conversation) {
+  const statusMap = {
+    go: { color: '#D9F264', label: 'Luz verde' },
+    caution: { color: '#FFB800', label: 'Luz amarilla' },
+    stop: { color: '#FF4D4D', label: 'Luz roja' }
+  };
+  const colorSet = statusMap[data.status] || statusMap.caution;
+  const mainColor = colorSet.color;
+  const labelText = data.label || colorSet.label;
+
+  const gaugeLength = 408.4;
+  const intensity = Math.max(0, Math.min(100, data.intensity_percent || 0));
+  const gaugeOffset = gaugeLength * (1 - intensity / 100);
+
+  const loadWidth = Math.max(0, Math.min(100, data.load_percent || 0));
+  const riskWidth = Math.max(0, Math.min(100, data.risk_percent || 0));
+
+  const loadColor = loadWidth > 75 ? '#FF4D4D' : loadWidth > 50 ? '#FFB800' : loadWidth > 30 ? '#FFB800' : '#D9F264';
+  const riskColor = riskWidth > 75 ? '#FF4D4D' : riskWidth > 50 ? '#FF4D4D' : riskWidth > 25 ? '#FFB800' : '#D9F264';
+
+  const doItems = (data.do_items || []).slice(0, 4);
+  const avoidItems = (data.avoid_items || []).slice(0, 4);
+
+  const card = document.createElement('div');
+  card.className = 'verdict';
+  card.innerHTML = `
+    <div class="v-header">
+      <div class="v-status-pill">
+        <div class="v-status-dot ${data.status}"></div>
+        <span class="v-status-label">${escapeHtml(labelText)}</span>
+      </div>
+      <span class="v-timestamp">${getDateLabel()} · ${getTime()}</span>
+    </div>
+    <div class="v-gauge">
+      <svg viewBox="0 0 280 180" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 40 140 A 100 100 0 0 1 240 140" stroke="rgba(255,255,255,0.06)" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <path d="M 40 140 A 100 100 0 0 1 240 140" stroke="${mainColor}" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="${gaugeLength}" stroke-dashoffset="${gaugeOffset}" style="transition: stroke-dashoffset 0.8s ease;"/>
+        <text x="140" y="105" text-anchor="middle" fill="${mainColor}" font-family="Outfit" font-weight="300" font-size="42" letter-spacing="-1">${intensity}<tspan font-size="20" dy="-12">%</tspan></text>
+        <text x="140" y="135" text-anchor="middle" fill="#55524e" font-family="Outfit" font-weight="400" font-size="9" letter-spacing="1.5">INTENSIDAD MÁX</text>
+      </svg>
+    </div>
+    <div class="v-metrics">
+      <div class="v-metric">
+        <span class="v-metric-label">Carga</span>
+        <div class="v-metric-bar"><div class="v-metric-fill" style="width:${loadWidth}%; background:${loadColor};"></div></div>
+        <span class="v-metric-value">${loadWidth}</span>
+      </div>
+      <div class="v-metric">
+        <span class="v-metric-label">Riesgo</span>
+        <div class="v-metric-bar"><div class="v-metric-fill" style="width:${riskWidth}%; background:${riskColor};"></div></div>
+        <span class="v-metric-value">${riskWidth}</span>
+      </div>
+    </div>
+    ${doItems.length > 0 ? `
+      <div class="v-section">
+        <div class="v-section-label">Hacer</div>
+        <div class="v-list">${doItems.map(item => `<div class="v-item do">${escapeHtml(item)}</div>`).join('')}</div>
+      </div>
+    ` : ''}
+    ${avoidItems.length > 0 ? `
+      <div class="v-section">
+        <div class="v-section-label">Evitar</div>
+        <div class="v-list">${avoidItems.map(item => `<div class="v-item avoid">${escapeHtml(item)}</div>`).join('')}</div>
+      </div>
+    ` : ''}
+    ${data.warning ? `<div class="v-warning">${escapeHtml(data.warning)}</div>` : ''}
+  `;
+  parentEl.appendChild(card);
+  scrollToBottom();
+}
+
+function processCompleteResponse(fullText, agentBubble) {
+  if (fullText.includes('<<<VERDICT')) {
+    try {
+      const verdictMatch = fullText.match(/<<<VERDICT\s*([\s\S]+?)\s*VERDICT>>>/);
+      if (!verdictMatch) throw new Error('VERDICT markers not properly closed');
+      const verdictData = JSON.parse(verdictMatch[1]);
+      const beforeText = fullText.substring(0, fullText.indexOf('<<<VERDICT')).trim();
+      const afterText = fullText.substring(fullText.indexOf('VERDICT>>>') + 'VERDICT>>>'.length).trim();
+      if (beforeText) {
+        agentBubble.content.innerHTML = formatText(beforeText);
+      } else {
+        agentBubble.container.remove();
+      }
+      agentBubble.cursor.remove();
+      renderVerdictCardC2(verdictData);
+      if (afterText) {
+        const afterBubble = createAgentBubble();
+        afterBubble.content.innerHTML = formatText(afterText);
+        afterBubble.cursor.remove();
+      }
+      return fullText;
+    } catch (e) {
+      console.warn('VERDICT parse error:', e);
+      agentBubble.content.innerHTML = formatText(fullText);
+      agentBubble.cursor.remove();
+    }
+  } else {
+    agentBubble.content.innerHTML = formatText(fullText);
+    agentBubble.cursor.remove();
+  }
+  return fullText;
+}
+
+// ===============================================
+// LLAMADA AL WORKER
+// ===============================================
+
+async function callAgent(userMessage) {
+  messageHistory.push({ role: 'user', content: userMessage });
+  await saveMessageToDb('user', userMessage);
+
+  setAgentState('thinking');
+  isStreaming = true;
+  sendBtn.disabled = true;
+  showTypingDots();
+
+  let agentBubble = null;
+  let fullText = '';
+
+  try {
+    const response = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: messageHistory }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error || `Error ${response.status}`);
+    }
+
+    removeTypingDots();
+    agentBubble = createAgentBubble();
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (!data || data === '[DONE]') continue;
+        try {
+          const event = JSON.parse(data);
+          if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+            const chunk = event.delta.text;
+            fullText += chunk;
+            if (!fullText.includes('<<<VERDICT')) {
+              agentBubble.content.innerHTML = formatText(fullText);
+              scrollToBottom(false);
+            } else {
+              const idx = fullText.indexOf('<<<VERDICT');
+              const visibleText = fullText.substring(0, idx).trim();
+              agentBubble.content.innerHTML = formatText(visibleText);
+              agentBubble.cursor.style.background = 'var(--yellow)';
+            }
+          }
+        } catch (e) {}
+      }
+    }
+
+    processCompleteResponse(fullText, agentBubble);
+    messageHistory.push({ role: 'assistant', content: fullText });
+    await saveMessageToDb('assistant', fullText);
+    setAgentState('online');
+
+  } catch (error) {
+    console.error('Error:', error);
+    removeTypingDots();
+    if (agentBubble) agentBubble.container.remove();
+    let errorMsg = 'No pude conectar con el agente. ';
+    if (error.message.includes('Failed to fetch')) errorMsg += 'Revisa tu conexión a internet.';
+    else errorMsg += error.message;
+    renderError(errorMsg);
+    setAgentState('error');
+    messageHistory.pop();
+  } finally {
+    isStreaming = false;
+    sendBtn.disabled = input.value.trim() === '';
+  }
+}
+
+// ===============================================
+// CONTROL DE FLUJO
+// ===============================================
+
+async function resetChat() {
+  if (!confirm('¿Reiniciar conversación? Empezás una nueva (la anterior queda guardada).')) return;
+  try {
+    await createNewConversation();
+  } catch (error) {
+    console.error('Error creating new conversation:', error);
+  }
+  messageHistory = [];
+  conversation.innerHTML = '<div class="day-marker">Hoy</div>';
+  setTimeout(() => {
+    callAgent('[SISTEMA: El usuario reinició la conversación. Saluda brevemente variando la apertura y haz tu primera pregunta del check-in.]');
+  }, 300);
+}
+
+// ===============================================
+// INPUT HANDLERS
+// ===============================================
+
+input.addEventListener('input', () => {
+  sendBtn.disabled = input.value.trim() === '' || isStreaming;
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 100) + 'px';
+});
+
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+document.getElementById('emailInput')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('passwordInput').focus();
+});
+
+document.getElementById('passwordInput')?.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') signInWithEmail();
+});
+
+// Listeners onboarding
+document.getElementById('obName').addEventListener('input', validateCurrentStep);
+document.getElementById('obAge').addEventListener('input', validateCurrentStep);
+document.getElementById('obWeight').addEventListener('input', validateCurrentStep);
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text || isStreaming) return;
+  input.value = '';
+  input.style.height = 'auto';
+  sendBtn.disabled = true;
+  renderUserMessage(text);
+  await callAgent(text);
+}
+
+// ===============================================
+// INICIO
+// ===============================================
+
+checkAuthState();
+
+</script>
+
+</body>
+</html>
