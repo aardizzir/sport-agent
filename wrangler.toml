@@ -1,0 +1,11 @@
+name = "sport-agent-api"
+main = "worker-v042.js"
+compatibility_date = "2024-11-01"
+account_id = "e445ed6edcaa26154bd7494f2bc42ff1"
+
+[vars]
+SUPABASE_URL = "https://thmauqyngmlmgrfnldxj.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRobWF1cXluZ21sbWdyZm5sZHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwMjE5NzIsImV4cCI6MjA5MzU5Nzk3Mn0._ZwZORe4POzoi6hX9NBxgHnXlK8L7KxmnaWAnk2HpxI"
+
+# ANTHROPIC_API_KEY se configura como secret:
+# wrangler secret put ANTHROPIC_API_KEY
