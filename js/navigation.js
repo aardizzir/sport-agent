@@ -27,5 +27,6 @@ export function initNavigation() {
   document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.addEventListener('click', () => switchTab(tab.dataset.tab));
   });
+  window.switchTab = switchTab;
   switchTab('hoy');
 }

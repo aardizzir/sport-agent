@@ -1,6 +1,16 @@
 import { supabaseClient } from './supabase.js';
 import { state } from './state.js';
 
+function stripMarkdown(text) {
+  if (!text) return '';
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/#{1,6}\s/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 function statusColor(status) {
   if (status === 'go') return '#5a9e3a';
   if (status === 'caution') return '#c49b20';
@@ -18,7 +28,7 @@ function statusDotClass(status) {
 function getWeekDots(verdicts) {
   const DAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
   const today = new Date();
-  const dow = today.getDay(); // 0=Sun
+  const dow = today.getDay();
   const mondayOffset = dow === 0 ? 6 : dow - 1;
 
   return DAYS.map((label, i) => {
@@ -75,25 +85,29 @@ export async function loadCuerpo() {
 
     let html = '';
 
+    // Card estado actual — orb 56px, status 18px, desc truncada
     if (latest) {
       const status = latest.raw_json?.status || '';
       const color = statusColor(status);
+      const labelText = stripMarkdown(latest.load_level || '—');
+      const descText = stripMarkdown(latest.recommendation || '');
       html += `
         <div class="body-card">
           <div class="body-card-row">
             <div class="body-status-orb" style="background:${color}22;border:2px solid ${color};">
-              <div style="width:10px;height:10px;border-radius:50%;background:${color};"></div>
+              <div style="width:14px;height:14px;border-radius:50%;background:${color};"></div>
             </div>
             <div style="flex:1;min-width:0;">
-              <div class="section-head" style="margin:0 0 2px;padding:0;">Estado actual</div>
-              <div style="font-size:13px;font-weight:500;color:var(--anata-black);">${latest.load_level || '—'}</div>
-              ${latest.recommendation ? `<div style="font-size:11px;color:var(--anata-gray);margin-top:3px;line-height:1.4;">${latest.recommendation}</div>` : ''}
+              <div class="section-head" style="margin:0 0 4px;padding:0;">Estado actual</div>
+              <div class="body-status-label">${labelText}</div>
+              ${descText ? `<div class="body-status-desc">${descText}</div>` : ''}
             </div>
             <div style="font-size:9px;color:var(--anata-gray);flex-shrink:0;padding-left:8px;">${relDate(latest.created_at)}</div>
           </div>
         </div>`;
     }
 
+    // Dots de la semana — 32px
     const weekDots = getWeekDots(verdicts);
     html += `<div class="body-week">`;
     for (const day of weekDots) {
@@ -106,6 +120,7 @@ export async function loadCuerpo() {
     }
     html += `</div>`;
 
+    // Molestias solo si existen
     if (aches.length > 0) {
       html += `<div class="section-head">Molestias</div>`;
       for (const a of aches) {
@@ -114,7 +129,7 @@ export async function loadCuerpo() {
             <div class="verdict-status-dot dot-ambar"></div>
             <div class="verdict-body">
               <div class="verdict-status-label">${a.body_zone || '—'}</div>
-              <div class="verdict-text">${a.description || '—'}</div>
+              <div class="verdict-text">${stripMarkdown(a.description || '—')}</div>
             </div>
             ${a.intensity ? `<div class="verdict-time">${a.intensity}/10</div>` : ''}
           </div>`;

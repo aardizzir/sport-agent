@@ -1,6 +1,16 @@
 import { supabaseClient } from './supabase.js';
 import { state } from './state.js';
 
+function stripMarkdown(text) {
+  if (!text) return '';
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/#{1,6}\s/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 function getDotClass(verdict) {
   const status = verdict.raw_json?.status || '';
   const level = (verdict.load_level || '').toLowerCase();
@@ -77,13 +87,21 @@ export async function loadHistory() {
       for (const v of items) {
         const card = document.createElement('div');
         card.className = 'verdict-card';
+        const statusLabel = stripMarkdown(v.load_level || '—');
+        const text = stripMarkdown(v.recommendation || '—');
         card.innerHTML = `
           <div class="verdict-status-dot ${getDotClass(v)}"></div>
           <div class="verdict-body">
-            <div class="verdict-status-label">${v.load_level || '—'}</div>
-            <div class="verdict-text">${v.recommendation || '—'}</div>
+            <div class="verdict-status-label">${statusLabel}</div>
+            <div class="verdict-text">${text}</div>
           </div>
-          <div class="verdict-time">${fmtTime(v.created_at)}</div>`;
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
+            <div class="verdict-time">${fmtTime(v.created_at)}</div>
+            <span class="verdict-arrow">›</span>
+          </div>`;
+        card.addEventListener('click', () => {
+          if (typeof window.switchTab === 'function') window.switchTab('hoy');
+        });
         group.appendChild(card);
       }
       container.appendChild(group);
