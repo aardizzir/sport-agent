@@ -1,5 +1,6 @@
 import { checkAuthState } from './auth.js';
 import { state } from './state.js';
+import { initNavigation } from './navigation.js';
 
 // Fix de altura para teclado en iOS
 function updateAppHeight() {
@@ -48,4 +49,5 @@ input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); window.sendMessage(); }
 });
 
+initNavigation();
 checkAuthState();

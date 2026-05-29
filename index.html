@@ -171,36 +171,90 @@
 
   <!-- ========== APP PRINCIPAL ========== -->
   <div id="appMain" class="hidden" style="display:none; flex-direction:column; height:100%;">
-    <div class="header">
-      <div id="avatar" class="avatar logo-mode" style="color: var(--brand);">
-        <svg width="100%" height="100%" viewBox="280 140 220 530" preserveAspectRatio="xMidYMid meet"><use href="#anata-isologo"/></svg>
+
+    <!-- Elementos ocultos referenciados por chat.js -->
+    <div id="avatar" class="avatar logo-mode" style="display:none; color:var(--brand);">
+      <svg width="100%" height="100%" viewBox="280 140 220 530" preserveAspectRatio="xMidYMid meet"><use href="#anata-isologo"/></svg>
+    </div>
+    <div id="headerName" style="display:none;">ANATA</div>
+    <div id="headerStatus" style="display:none;">● En línea</div>
+
+    <!-- ── PANTALLA HOY ── -->
+    <div id="screen-hoy" class="screen active">
+      <div class="screen-header">
+        <span class="anata-wordmark">ANATA</span>
       </div>
-      <div class="header-info">
-        <div id="headerName" class="header-title">ANATA</div>
-        <div id="headerStatus" class="header-status">● En línea</div>
+      <div id="conversation" class="conversation">
+        <div class="day-marker">Hoy</div>
       </div>
-      <div class="header-actions">
-        <button class="btn-icon" onclick="resetChat()" title="Nueva conversación">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+      <div class="input-bar">
+        <div class="input-wrap">
+          <textarea id="inputField" rows="1" placeholder="Escribí tu mensaje..." autocomplete="off"></textarea>
+        </div>
+        <button id="sendBtn" class="send-btn" onclick="sendMessage()" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
         </button>
-        <button class="btn-icon" onclick="signOut()" title="Cerrar sesión">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        </button>
+      </div>
+      <div class="nav-spacer"></div>
+    </div>
+
+    <!-- ── PANTALLA HISTORIAL ── -->
+    <div id="screen-historial" class="screen hidden">
+      <div class="screen-header">
+        <span class="anata-wordmark">ANATA</span>
+      </div>
+      <div id="history-content" class="screen-scroll">
       </div>
     </div>
 
-    <div id="conversation" class="conversation">
-      <div class="day-marker">Hoy</div>
+    <!-- ── PANTALLA CUERPO ── -->
+    <div id="screen-cuerpo" class="screen hidden">
+      <div class="screen-header">
+        <span class="anata-wordmark">ANATA</span>
+      </div>
+      <div id="body-content" class="screen-scroll">
+      </div>
     </div>
 
-    <div class="input-bar">
-      <div class="input-wrap">
-        <textarea id="inputField" rows="1" placeholder="Escribí tu mensaje..." autocomplete="off"></textarea>
+    <!-- ── PANTALLA PERFIL ── -->
+    <div id="screen-perfil" class="screen hidden">
+      <div class="screen-header">
+        <span class="anata-wordmark">ANATA</span>
       </div>
-      <button id="sendBtn" class="send-btn" onclick="sendMessage()" disabled>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+      <div id="profile-content" class="screen-scroll">
+      </div>
+    </div>
+
+    <!-- ── NAVEGACIÓN INFERIOR ── -->
+    <nav id="bottom-nav" class="bottom-nav">
+      <button class="nav-tab active" data-tab="hoy">
+        <svg viewBox="0 0 24 24" stroke-width="1.5">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span>Hoy</span>
       </button>
-    </div>
+      <button class="nav-tab" data-tab="historial">
+        <svg viewBox="0 0 24 24" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span>Historial</span>
+      </button>
+      <button class="nav-tab" data-tab="cuerpo">
+        <svg viewBox="0 0 24 24" stroke-width="1.5">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        <span>Cuerpo</span>
+      </button>
+      <button class="nav-tab" data-tab="perfil">
+        <svg viewBox="0 0 24 24" stroke-width="1.5">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span>Perfil</span>
+      </button>
+    </nav>
+
   </div>
 
 </div>

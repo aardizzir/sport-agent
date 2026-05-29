@@ -13,5 +13,6 @@ export const state = {
     experience: null,
     frequency_per_week: 4
   },
-  onboardingStep: 0
+  onboardingStep: 0,
+  currentTab: 'hoy'
 };
