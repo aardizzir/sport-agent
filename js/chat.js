@@ -66,7 +66,30 @@ function renderError(message) {
   scrollToBottom();
 }
 
+// Marcador oculto de molestia. El usuario nunca lo ve; alimenta la tabla `aches`.
+const ACHE_RE = /<<<ACHE\s*([\s\S]+?)\s*ACHE>>>/g;
+
+// Devuelve la primera molestia parseada del texto (o null). No muta nada.
+export function extractAcheData(text) {
+  const m = text.match(/<<<ACHE\s*([\s\S]+?)\s*ACHE>>>/);
+  if (!m) return null;
+  try {
+    const data = JSON.parse(m[1]);
+    if (!data || !data.body_zone) return null;
+    return data;
+  } catch (e) {
+    console.warn('ACHE parse error:', e);
+    return null;
+  }
+}
+
+// Quita todos los bloques ACHE del texto para que nunca se rendericen.
+function stripAcheMarkers(text) {
+  return text.replace(ACHE_RE, '').trim();
+}
+
 export function processCompleteResponse(fullText, agentBubble) {
+  fullText = stripAcheMarkers(fullText);
   if (fullText.includes('<<<VERDICT')) {
     try {
       const verdictMatch = fullText.match(/<<<VERDICT\s*([\s\S]+?)\s*VERDICT>>>/);
@@ -244,11 +267,14 @@ export async function callAgent(userMessage) {
           if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
             const chunk = event.delta.text;
             fullText += chunk;
-            if (!fullText.includes('<<<VERDICT')) {
+            // Cortar el texto visible en el primer marcador oculto (VERDICT o ACHE).
+            const markerIdxs = [fullText.indexOf('<<<VERDICT'), fullText.indexOf('<<<ACHE')]
+              .filter(i => i !== -1);
+            if (markerIdxs.length === 0) {
               agentBubble.content.innerHTML = formatText(fullText);
               scrollToBottom(false);
             } else {
-              const idx = fullText.indexOf('<<<VERDICT');
+              const idx = Math.min(...markerIdxs);
               const visibleText = fullText.substring(0, idx).trim();
               agentBubble.content.innerHTML = formatText(visibleText);
               agentBubble.cursor.style.background = 'var(--yellow)';
@@ -280,6 +306,29 @@ export async function callAgent(userMessage) {
         }
       } catch (e) {
         console.error('Verdict parse/save error:', e);
+      }
+    }
+
+    // Persistir molestias reportadas (bloques ACHE) en la tabla aches.
+    // Esto alimenta detectAndUpdatePatterns() en el Worker -> tabla patterns.
+    if (fullText.includes('<<<ACHE') && state.currentUser) {
+      const matches = [...fullText.matchAll(ACHE_RE)];
+      for (const match of matches) {
+        try {
+          const ache = JSON.parse(match[1]);
+          if (!ache || !ache.body_zone) continue;
+          const intensity = Number.isInteger(ache.intensity) ? ache.intensity : null;
+          const { error: acheError } = await supabaseClient.from('aches').insert({
+            user_id: state.currentUser.id,
+            conversation_id: state.currentConversationId,
+            body_zone: String(ache.body_zone).trim().toLowerCase(),
+            intensity: intensity,
+            description: ache.description ?? null,
+          });
+          if (acheError) console.error('Error saving ache to DB:', acheError);
+        } catch (e) {
+          console.error('Ache parse/save error:', e);
+        }
       }
     }
 
