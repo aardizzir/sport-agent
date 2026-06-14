@@ -14,5 +14,6 @@ export const state = {
     frequency_per_week: 4
   },
   onboardingStep: 0,
-  currentTab: 'hoy'
+  currentTab: 'hoy',
+  viewingHistorical: false
 };

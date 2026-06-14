@@ -1073,9 +1073,7 @@ html, body {
   left: 0;
   width: 100%;
   height: 52px;
-  background: rgba(255,255,255,0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: transparent;
   border-top: 1px solid rgba(0,0,0,0.07);
   display: flex;
   align-items: center;
@@ -1304,7 +1302,7 @@ html, body {
   background: rgba(0,0,0,0.04);
   border: 1px solid rgba(0,0,0,0.1);
 }
-.body-day-dot.dot-today { box-shadow: 0 0 0 2px var(--anata-dark); }
+.body-day-dot.dot-today { box-shadow: 0 0 0 2px rgba(0,0,0,0.12); }
 .body-day-label {
   font-size: 8px;
   letter-spacing: 0.08em;
@@ -1484,3 +1482,88 @@ html, body {
   color: var(--anata-black);
   border-left-color: #c49b20;
 }
+
+/* ========== SESIÓN 06 — BANNER NAVEGACIÓN HISTÓRICA ========== */
+.historical-banner {
+  background: rgba(196,155,32,0.08);
+  border-bottom: 1px solid rgba(196,155,32,0.2);
+  padding: 8px 16px;
+  font-size: 11px;
+  color: #c49b20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.historical-banner button {
+  background: none;
+  border: none;
+  color: #000000;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: inherit;
+}
+
+/* ========== SESIÓN 06 — CUERPO: MOLESTIAS ========== */
+.ache-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 2px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+.ache-item:last-child { border-bottom: none; }
+.ache-item.resolved { opacity: 0.5; }
+.ache-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+.ache-info { flex: 1; min-width: 0; }
+.ache-zone {
+  font-size: 11px;
+  color: var(--anata-black);
+  text-transform: capitalize;
+}
+.ache-meta {
+  font-size: 9px;
+  color: var(--anata-gray);
+  margin-top: 2px;
+}
+.ache-badge {
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--anata-gray);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* ========== SESIÓN 06 — CUERPO: BANNER DE PATRÓN ========== */
+.pattern-banner {
+  background: rgba(196,155,32,0.08);
+  border-left: 2px solid #c49b20;
+  border-radius: 4px;
+  padding: 7px 10px;
+  margin-bottom: 10px;
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+  color: #c49b20;
+}
+
+/* ========== SESIÓN 06 — CUERPO: SKELETON DE CARGA ========== */
+.body-skeleton {
+  background: rgba(0,0,0,0.06);
+  border-radius: 14px;
+  margin-bottom: 10px;
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+
+/* ========== SESIÓN 06 — CARDS A 0.6 (consistencia visual) ========== */
+.body-card, .body-week { background: rgba(255,255,255,0.6); }

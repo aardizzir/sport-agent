@@ -11,29 +11,39 @@ function stripMarkdown(text) {
     .trim();
 }
 
-function getDotClass(verdict) {
-  const status = verdict.raw_json?.status || '';
-  const level = (verdict.load_level || '').toLowerCase();
-  if (status === 'go' || level.includes('verde') || level.includes('listo')) return 'dot-verde';
-  if (status === 'caution' || level.includes('amarillo') || level.includes('precauc') || level.includes('cuidado')) return 'dot-ambar';
-  if (status === 'stop' || level.includes('rojo') || level.includes('descanso') || level.includes('parar')) return 'dot-rojo';
+function escapeHtml(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+}
+
+// Mapa status -> display (label + clase del dot), consistente con Cuerpo.
+function statusLabel(status) {
+  if (status === 'go') return 'Listo';
+  if (status === 'caution') return 'Precaución';
+  if (status === 'stop') return 'Descanso';
+  return 'Sin datos';
+}
+
+function getDotClass(status) {
+  if (status === 'go') return 'dot-verde';
+  if (status === 'caution') return 'dot-ambar';
+  if (status === 'stop') return 'dot-rojo';
   return 'dot-neutral';
 }
 
+// Agrupa: Hoy / Ayer / Esta semana (≤7 días) / DD/MM/YYYY (más antiguo).
 function groupByDate(verdicts) {
   const groups = {};
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
 
   for (const v of verdicts) {
     const d = new Date(v.created_at); d.setHours(0, 0, 0, 0);
+    const diff = Math.round((today - d) / 86400000);
     let key;
-    if (d.getTime() === today.getTime()) key = 'Hoy';
-    else if (d.getTime() === yesterday.getTime()) key = 'Ayer';
-    else {
-      const diff = Math.round((today - d) / 86400000);
-      key = diff < 7 ? `Hace ${diff} días` : d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
-    }
+    if (diff <= 0) key = 'Hoy';
+    else if (diff === 1) key = 'Ayer';
+    else if (diff < 7) key = 'Esta semana';
+    else key = d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     if (!groups[key]) groups[key] = [];
     groups[key].push(v);
   }
@@ -62,7 +72,7 @@ export async function loadHistory() {
   try {
     const { data: verdicts, error } = await supabaseClient
       .from('verdicts')
-      .select('*')
+      .select('id, raw_json, recommendation, load_level, created_at, conversation_id')
       .eq('user_id', state.currentUser.id)
       .order('created_at', { ascending: false })
       .limit(30);
@@ -85,22 +95,29 @@ export async function loadHistory() {
       const group = document.createElement('div');
       group.innerHTML = `<div class="group-date">${label}</div>`;
       for (const v of items) {
+        const status = v.raw_json?.status || null;
         const card = document.createElement('div');
         card.className = 'verdict-card';
-        const statusLabel = stripMarkdown(v.load_level || '—');
-        const text = stripMarkdown(v.recommendation || '—');
+        // Texto completo del veredicto, sin truncar y sin markdown.
+        const text = escapeHtml(stripMarkdown(v.raw_json?.reasoning || v.recommendation || '—'));
         card.innerHTML = `
-          <div class="verdict-status-dot ${getDotClass(v)}"></div>
+          <div class="verdict-status-dot ${getDotClass(status)}"></div>
           <div class="verdict-body">
-            <div class="verdict-status-label">${statusLabel}</div>
+            <div class="verdict-status-label">${statusLabel(status)}</div>
             <div class="verdict-text">${text}</div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
             <div class="verdict-time">${fmtTime(v.created_at)}</div>
             <span class="verdict-arrow">›</span>
           </div>`;
+        const convId = v.conversation_id;
         card.addEventListener('click', () => {
+          if (!convId) return;
+          // Bajamos el flag antes de switchTab para que NO dispare returnToToday()
+          // en paralelo con loadConversation (evita mezclar mensajes de 2 charlas).
+          state.viewingHistorical = false;
           if (typeof window.switchTab === 'function') window.switchTab('hoy');
+          if (typeof window.loadConversation === 'function') window.loadConversation(convId, true);
         });
         group.appendChild(card);
       }
@@ -108,7 +125,7 @@ export async function loadHistory() {
     }
   } catch (err) {
     const c = document.getElementById('history-content');
-    if (c) c.innerHTML = `<p class="screen-error">Error al cargar historial: ${err.message}</p>`;
+    if (c) c.innerHTML = `<p class="screen-error">Error al cargar historial: ${escapeHtml(err.message || String(err))}</p>`;
   }
 }
 

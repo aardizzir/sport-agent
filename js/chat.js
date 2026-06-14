@@ -177,6 +177,78 @@ export async function loadMessages(conversationId) {
   }
 }
 
+// ── Navegación histórica: cargar una conversación pasada en modo solo lectura ──
+function showHistoricalBanner(dateLabel) {
+  let banner = document.getElementById('historical-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'historical-banner';
+    banner.className = 'historical-banner';
+    banner.innerHTML = `<span>← Esta es una conversación pasada</span><button onclick="returnToToday()">Volver al chat de hoy</button>`;
+    conversation.parentNode.insertBefore(banner, conversation);
+  }
+  banner.style.display = 'flex';
+  input.disabled = true;
+  sendBtn.disabled = true;
+  input.placeholder = dateLabel
+    ? `Conversación del ${dateLabel} — solo lectura`
+    : 'Conversación pasada — solo lectura';
+}
+
+// Carga los mensajes de una conversación. Si isHistorical, la muestra en modo
+// solo lectura con banner; NO toca state.currentConversationId ni messageHistory
+// (la conversación de hoy queda intacta para cuando el usuario vuelva).
+export async function loadConversation(conversationId, isHistorical = false) {
+  if (!conversationId) return;
+
+  if (!isHistorical) {
+    await loadMessages(conversationId);
+    return;
+  }
+
+  state.viewingHistorical = true;
+  clearConversationUI();
+
+  const { data, error } = await supabaseClient
+    .from('messages')
+    .select('role, content, created_at')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error loading historical conversation:', error);
+    return;
+  }
+
+  for (const msg of (data || [])) {
+    if (msg.role === 'user' && !msg.content.startsWith('[SISTEMA:')) {
+      renderUserMessage(msg.content);
+    } else if (msg.role === 'assistant') {
+      const bubble = createAgentBubble();
+      processCompleteResponse(msg.content, bubble);
+    }
+  }
+
+  const dateLabel = (data && data.length)
+    ? new Date(data[0].created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : '';
+  showHistoricalBanner(dateLabel);
+}
+
+// Vuelve al chat del día actual desde una conversación histórica.
+export async function returnToToday() {
+  const banner = document.getElementById('historical-banner');
+  if (banner) banner.remove();
+  state.viewingHistorical = false;
+  input.disabled = false;
+  input.placeholder = 'Escribí tu mensaje...';
+  clearConversationUI();
+  if (state.currentConversationId) {
+    await loadMessages(state.currentConversationId);
+  }
+  sendBtn.disabled = input.value.trim() === '';
+}
+
 export function buildSystemContextMessage() {
   if (!state.currentProfile) {
     return '[SISTEMA: Es el primer mensaje del usuario. Saluda brevemente y haz tu primera pregunta del check-in del día.]';
@@ -425,3 +497,5 @@ export async function sendMessage() {
 
 window.resetChat = resetChat;
 window.sendMessage = sendMessage;
+window.loadConversation = loadConversation;
+window.returnToToday = returnToToday;

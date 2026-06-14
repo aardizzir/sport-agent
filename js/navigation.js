@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { loadHistory } from './history.js';
 import { loadCuerpo } from './body.js';
 import { loadProfile } from './profile.js';
+import { returnToToday } from './chat.js';
 
 export function switchTab(tabName) {
   document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -21,6 +22,7 @@ export function switchTab(tabName) {
   if (tabName === 'historial') loadHistory();
   else if (tabName === 'perfil') loadProfile();
   else if (tabName === 'cuerpo') loadCuerpo();
+  else if (tabName === 'hoy' && state.viewingHistorical) returnToToday();
 }
 
 export function initNavigation() {
