@@ -3,11 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- iOS específico -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="ANATA">
-<meta name="theme-color" content="#0a0a0a">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+<!-- Color del sistema -->
+<meta name="theme-color" content="#474C49">
 <title>ANATA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -39,6 +47,13 @@
 </svg>
 
 <div class="app">
+
+  <!-- ========== BANNER DE INSTALACIÓN PWA (Android/Chrome) ========== -->
+  <div id="install-banner" class="install-banner hidden">
+    <span>Instalá ANATA en tu celular</span>
+    <button id="install-btn">Agregar</button>
+    <button id="install-dismiss" aria-label="Cerrar">×</button>
+  </div>
 
   <!-- ========== PANTALLA DE LOGIN ========== -->
   <div id="loginScreen" class="login-screen">
@@ -262,6 +277,16 @@
 </div>
 
 <script type="module" src="js/app.js"></script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('/sport-agent/sw.js')
+        .catch(err => console.log('SW error:', err));
+    });
+  }
+</script>
 
 </body>
 </html>

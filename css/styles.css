@@ -1567,3 +1567,162 @@ html, body {
 
 /* ========== SESIÓN 06 — CARDS A 0.6 (consistencia visual) ========== */
 .body-card, .body-week { background: rgba(255,255,255,0.6); }
+
+/* ========== SESIÓN 07 — PERFIL EDITABLE (tap-to-edit) ========== */
+.field-edit-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  justify-content: flex-end;
+  min-width: 0;
+}
+.field-edit-wrap.editing {
+  justify-content: flex-start;
+}
+.field-edit-btn {
+  background: none;
+  border: none;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--anata-dark);
+  cursor: pointer;
+  font-family: inherit;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+.field-edit-btn:hover { color: var(--anata-black); }
+
+.field-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(0,0,0,0.2);
+  color: #000000;
+  font-size: 11px;
+  font-family: inherit;
+  padding: 4px 0;
+  width: 100%;
+  outline: none;
+}
+.field-input:focus {
+  border-bottom: 1px solid #474C49;
+}
+
+.field-save-btn {
+  background: none;
+  border: none;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--anata-dark);
+  cursor: pointer;
+  font-family: inherit;
+  padding: 2px 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.field-save-btn:hover { color: var(--anata-black); }
+.field-save-btn:disabled { opacity: 0.5; cursor: default; }
+
+.field-error {
+  width: 100%;
+  font-size: 10px;
+  color: rgba(192,57,43,0.8);
+  padding: 2px 0 0;
+}
+.field-error:empty { display: none; }
+
+/* Flash de éxito al guardar */
+.field-saved-flash {
+  animation: fieldSavedFlash 0.8s ease-out;
+}
+@keyframes fieldSavedFlash {
+  0%   { background: rgba(90,158,58,0.15); }
+  100% { background: transparent; }
+}
+
+/* La fila editable necesita permitir wrap del error debajo */
+.field-row[data-field-row] {
+  flex-wrap: wrap;
+}
+
+/* ========== SESIÓN 07 — SECCIÓN INSTALAR ANATA ========== */
+.install-block {
+  padding: 12px 0;
+}
+.install-copy {
+  font-size: 11px;
+  color: var(--anata-black);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+.install-instructions-btn {
+  background: rgba(71,76,73,0.09);
+  border: none;
+  color: var(--anata-dark);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.install-instructions-btn:hover { background: rgba(71,76,73,0.16); }
+.install-instructions {
+  padding: 4px 0 12px;
+  border-top: 1px solid rgba(0,0,0,0.07);
+}
+.install-step {
+  font-size: 11px;
+  color: var(--anata-black);
+  line-height: 1.6;
+  padding: 8px 0;
+}
+.install-step strong { font-weight: 500; }
+.install-step em { font-style: normal; color: var(--anata-dark); }
+.install-glyph {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--anata-dark);
+}
+
+/* ========== SESIÓN 07 — BANNER DE INSTALACIÓN (Android/Chrome) ========== */
+.install-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  max-width: 520px;
+  margin: 0 auto;
+  background: #474C49;
+  color: #FFFFFF;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  z-index: 1000;
+}
+.install-banner.hidden { display: none; }
+.install-banner span { flex: 1; }
+.install-banner button {
+  background: none;
+  border: none;
+  color: #FFFFFF;
+  font-family: inherit;
+  cursor: pointer;
+}
+#install-btn {
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 18px;
+  padding: 6px 14px;
+  font-size: 12px;
+}
+#install-dismiss {
+  font-size: 20px;
+  line-height: 1;
+  padding: 0 4px;
+}

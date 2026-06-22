@@ -51,3 +51,26 @@ input.addEventListener('keydown', (e) => {
 
 initNavigation();
 checkAuthState();
+
+// ── PWA: banner de instalación (solo Android/Chrome dispara beforeinstallprompt) ──
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (!localStorage.getItem('installDismissed')) {
+    document.getElementById('install-banner')?.classList.remove('hidden');
+  }
+});
+
+document.getElementById('install-btn')?.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('install-banner')?.classList.add('hidden');
+});
+
+document.getElementById('install-dismiss')?.addEventListener('click', () => {
+  document.getElementById('install-banner')?.classList.add('hidden');
+  localStorage.setItem('installDismissed', 'true');
+});

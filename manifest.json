@@ -1,0 +1,26 @@
+{
+  "name": "ANATA",
+  "short_name": "ANATA",
+  "description": "Tu agente de rendimiento deportivo",
+  "start_url": "/sport-agent/",
+  "scope": "/sport-agent/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFFFFF",
+  "theme_color": "#474C49",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
