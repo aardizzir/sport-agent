@@ -22,7 +22,8 @@ export async function getGarminToken(env) {
   }
   const res = await fetch(GARMIN_BASE + TOKEN_PATH, {
     method: 'POST',
-    headers: { Authorization: `ApiKey ${env.GARMIN_PERSONAL_API_KEY}`, Accept: 'application/json' },
+    // Sin header Accept: el endpoint responde 406 si se pide application/json.
+    headers: { Authorization: `ApiKey ${env.GARMIN_PERSONAL_API_KEY}` },
   });
   const text = await res.text();
   if (!res.ok) {

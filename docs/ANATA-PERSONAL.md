@@ -379,3 +379,39 @@ El riesgo más grande es que la Personal API no entregue Disposición para entre
 ## Registro de sesiones
 
 Pega aquí el resumen que entrega Claude Code al cerrar cada fase.
+
+### Fase 1 · Datos de Garmin — 20-21 nov 2026 (cerrada)
+
+**Lo hecho**
+
+- Worker `sport-agent-api` v0.7.0 desplegado, reorganizado en `worker/index.js` (rutas y cron), `worker/garmin.js` (cliente Garmin) y `worker/chat.js` (el chat de siempre, sin cambios de comportamiento).
+- Cliente oficial de la Garmin Connect Personal API: `POST https://personal.connectapi.garmin.com/personalapitoken-service/personal-api/personal-api-key/token` con `Authorization: ApiKey <clave>` → token de 24 h, se pide uno nuevo en cada ejecución. Ojo: ese endpoint responde 406 si se manda `Accept: application/json`.
+- Endpoints usados: `/usersummary-service/usersummary/daily`, `/sleep-service/sleep/dailySleep`, `/hrv-service/hrv/{fecha}`, `/metrics-service/metrics/maxmet/daily/{inicio}/{fin}` y `/activitylist-service/activities/search/activities`. El spec oficial quedó en `docs/garmin-personal-api-openapi.json`.
+- Tablas nuevas en Supabase con RLS por `user_id`: `garmin_daily` (una fila por día, con `raw_json` completo) y `garmin_sync_runs` (registro de cada sincronización, para saber si el cron corrió). Migración: `supabase/migrations/add_garmin_daily_table.sql`.
+- Cron: 06:30 hora de Santiago (lectura principal) + 09:30 (repesca si la banda sincronizó tarde). Trae ayer y hoy y hace upsert. Maneja solo el cambio de horario de verano/invierno de Chile.
+- `GET /today` (con el JWT de Supabase de la app): fila de hoy, promedios de los 7 días anteriores ("tu normal"), días con datos y última sincronización.
+- Rutas admin protegidas con `X-Admin-Token`: `POST /admin/garmin/sync?days=N`, `GET /admin/garmin/raw?date=`, `GET /admin/profiles`.
+- Los días sin ningún dato (antes de tener la banda o sin sincronizar) no se guardan.
+- Secretos del Worker (en Cloudflare, nunca en el código): `ANTHROPIC_API_KEY`, `GARMIN_PERSONAL_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ANATA_ADMIN_TOKEN`. `ANATA_USER_ID` = Agus, en `wrangler.toml`.
+
+**Qué llega de Garmin (prueba real del 17 al 21 nov; la banda tiene datos desde el 19)**
+
+| Métrica del traductor | ¿Llega por la API? | Datos reales | Nota |
+| --- | --- | --- | --- |
+| Body Battery al despertar | Sí | 20 nov: 57 | El 19 no hay: fue antes de la primera noche con la banda. También llegan mínimo, máximo y carga durante el sueño. |
+| Puntuación de sueño | Sí | 20 nov: 82 (buena), 8 h 28 min | Llegan también fases (profundo, REM) y sub-puntuaciones. |
+| Estrés promedio | Sí | 19: 43 · 20: 30 | |
+| Estado de VFC | Sí, pero calibrando | 20 nov: "none" (ONBOARDING_1), VFC noche 28 ms | Garmin necesita ~3 semanas. Estimado: cerca del 10 de diciembre. |
+| Disposición para entrenar | **No** | — | No existe en la Personal API → Plan B (captura) o Plan C (manual). |
+| Ratio de carga de Garmin | **No** | — | ANATA calcula uno propio con `activityTrainingLoad` de cada actividad: carga aguda (7 días) ÷ crónica (28 días ÷ 4). Se activa con 14 días de historia (cerca del 3 de diciembre). |
+| Carga aguda (calculada) | Sí | 19: 300 · 20: 710 | Fuerza 19 nov (106 min, carga 300) y 20 nov (87 min, carga 410). |
+| Pulso en reposo | Sí | 19: 69 · 20: 65 | El promedio de 7 días de Garmin todavía no llega (banda nueva); ANATA lo calcula. |
+| VO2 máx | Endpoint sí, dato no | — | Garmin aún no lo calcula (suele requerir caminata o carrera al aire libre con GPS). |
+| Sat. O2 (Pulse Ox) | Sí | 19: 95 · 20: 96 | |
+| Temperatura de la piel | **No** | — | No existe en la Personal API. Se descartó la columna. |
+
+**Lo que faltó o queda pendiente**
+
+- Criterio de éxito (3 días reales en Supabase): hoy hay 2 (19 y 20 nov) porque la banda empezó el 19. El tercero llega solo con el cron del sábado 21 a las 06:30.
+- `GET /today` se probó con datos simulados y responde 401 sin sesión. Con tu sesión real se prueba en la Fase 3, cuando la pantalla Hoy lo use.
+- El token de Cloudflare (30 días) quedó guardado en el entorno de Claude Code para desplegar en las próximas fases.

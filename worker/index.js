@@ -7,6 +7,7 @@
  *                                  (requiere el JWT de Supabase del usuario)
  *   POST /admin/garmin/sync      → trae N días de Garmin y hace upsert (?days=3)
  *                                  devuelve qué métricas llegaron. Header X-Admin-Token.
+ *   GET  /admin/garmin/raw       → respuesta cruda guardada de un día (?date=YYYY-MM-DD)
  *   GET  /admin/profiles         → lista perfiles (para configurar ANATA_USER_ID)
  *   scheduled (cron)             → 06:30 y 09:30 hora de Santiago: trae ayer y hoy
  *
@@ -47,13 +48,36 @@ function serviceHeaders(env, extra = {}) {
 
 async function upsertGarminRows(env, rows) {
   if (!env.ANATA_USER_ID) throw new Error('Falta ANATA_USER_ID (el uuid de tu usuario) en wrangler.toml');
-  const payload = rows.map(r => ({ ...r, user_id: env.ANATA_USER_ID }));
-  const res = await fetch(`${env.SUPABASE_URL}/rest/v1/garmin_daily?on_conflict=user_id,date`, {
-    method: 'POST',
-    headers: serviceHeaders(env, { Prefer: 'resolution=merge-duplicates,return=minimal' }),
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) throw new Error(`Supabase upsert garmin_daily ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  // Un día sin ninguna métrica (banda sin sincronizar, o antes de tenerla) no se
+  // guarda: así "días con datos" cuenta solo días reales. Si existía una fila
+  // vacía de la API para ese día, se borra.
+  const full = rows.filter(hasAnyData);
+  const empty = rows.filter(r => !hasAnyData(r)).map(r => r.date);
+
+  if (full.length) {
+    const payload = full.map(r => ({ ...r, user_id: env.ANATA_USER_ID }));
+    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/garmin_daily?on_conflict=user_id,date`, {
+      method: 'POST',
+      headers: serviceHeaders(env, { Prefer: 'resolution=merge-duplicates,return=minimal' }),
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`Supabase upsert garmin_daily ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  }
+  if (empty.length) {
+    await fetch(`${env.SUPABASE_URL}/rest/v1/garmin_daily?user_id=eq.${env.ANATA_USER_ID}&source=eq.api&date=in.(${empty.join(',')})`, {
+      method: 'DELETE',
+      headers: serviceHeaders(env, { Prefer: 'return=minimal' }),
+    });
+  }
+  return { saved: full.map(r => r.date), skipped_empty: empty };
+}
+
+const DATA_COLS = [
+  'body_battery_wake', 'body_battery_min', 'sleep_score', 'sleep_minutes', 'stress_avg',
+  'resting_hr', 'hrv_last_night_ms', 'vo2max', 'spo2_avg', 'steps', 'training_load',
+];
+function hasAnyData(r) {
+  return DATA_COLS.some(c => typeof r[c] === 'number' && (c !== 'training_load' && c !== 'steps' ? true : r[c] > 0));
 }
 
 async function logSyncRun(env, entry) {
@@ -73,11 +97,11 @@ async function syncGarmin(env, dates, trigger) {
   const startedAt = Date.now();
   try {
     const { rows, endpointStatus, activitiesFound } = await fetchGarminDays(env, dates);
-    await upsertGarminRows(env, rows);
+    const stored = await upsertGarminRows(env, rows);
     const report = presenceReport(rows);
     const missing = report.filter(m => m.days_with_value.startsWith('0/')).map(m => m.column);
     await logSyncRun(env, { trigger, ok: true, dates, missing_metrics: missing, duration_ms: Date.now() - startedAt });
-    return { ok: true, dates, activitiesFound, metrics: report, endpointStatus };
+    return { ok: true, dates, ...stored, activitiesFound, metrics: report, endpointStatus };
   } catch (e) {
     console.error('syncGarmin error:', e);
     if (env.ANATA_USER_ID && env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -161,6 +185,13 @@ async function handleAdmin(request, env, path) {
 
   if (path === '/admin/profiles' && request.method === 'GET') {
     const res = await fetch(`${env.SUPABASE_URL}/rest/v1/profiles?select=id,name,created_at&order=created_at.asc`, { headers: serviceHeaders(env) });
+    return json(await res.json(), res.status);
+  }
+
+  // Respuesta cruda guardada de un día (para descubrir campos).
+  if (path === '/admin/garmin/raw' && request.method === 'GET') {
+    const date = url.searchParams.get('date') || localDate();
+    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/garmin_daily?select=date,raw_json&user_id=eq.${env.ANATA_USER_ID}&date=eq.${date}`, { headers: serviceHeaders(env) });
     return json(await res.json(), res.status);
   }
 

@@ -14,7 +14,7 @@ crons = ["30 9 * * *", "30 10 * * *", "30 12 * * *", "30 13 * * *"]
 SUPABASE_URL = "https://thmauqyngmlmgrfnldxj.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRobWF1cXluZ21sbWdyZm5sZHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwMjE5NzIsImV4cCI6MjA5MzU5Nzk3Mn0._ZwZORe4POzoi6hX9NBxgHnXlK8L7KxmnaWAnk2HpxI"
 # uuid de tu usuario en Supabase (auth.users.id). No es secreto.
-ANATA_USER_ID = ""
+ANATA_USER_ID = "d950e849-6a2d-440e-93c1-2d6e6c0a20ae"
 
 # Secretos: se cargan en Cloudflare (Workers → sport-agent-api → Settings →
 # Variables and Secrets) o con `wrangler secret put NOMBRE`. Nunca en el código.
