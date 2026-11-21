@@ -1,5 +1,6 @@
 /**
- * Sport Agent - Cloudflare Worker v0.6.0
+ * ANATA - lógica del chat (antes worker-v042.js, v0.6.0).
+ * Desde la Fase 1 de ANATA Personal el router está en worker/index.js.
  * Cambios vs v0.5.0:
  * - Motor de detección de patrones longitudinales (detectAndUpdatePatterns)
  *   sobre las tablas aches y verdicts -> escribe/actualiza la tabla `patterns`.
@@ -444,23 +445,10 @@ ${memoryBlock}`;
 }
 
 // ─────────────────────────────────────────────────────────────
-// Worker
+// Handler del chat (POST / y POST /chat). El router vive en worker/index.js.
 // ─────────────────────────────────────────────────────────────
-export default {
-  async fetch(request, env, ctx) {
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    };
-
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders });
-    }
-    if (request.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405, headers: corsHeaders });
-    }
-
+export async function handleChat(request, env, ctx, corsHeaders) {
+    {
     try {
       const body = await request.json();
       const { messages, userId, authToken } = body;
@@ -542,5 +530,5 @@ export default {
       return new Response(JSON.stringify({ error: 'Internal error', message: error.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-  },
-};
+  }
+}
