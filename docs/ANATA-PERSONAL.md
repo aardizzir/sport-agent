@@ -443,3 +443,32 @@ Pega aquí el resumen que entrega Claude Code al cerrar cada fase.
 - Con menos de 7 días, "tu normal" es provisorio y a veces sale de 1 solo día. Mejora sola con el uso.
 - El chat ya usa el prompt v3 y los datos de Garmin, pero la pantalla Hoy todavía no muestra el resumen: eso es la Fase 3.
 - `verdict_id` en `daily_summaries` queda vacío hasta que exista el check-in de 1 toque (Fase 3).
+
+### Fase 3 · Pantallas y marca — 23 nov 2026 (cerrada)
+
+**Antes de empezar (chequeo):** cron y resúmenes de la Fase 2 funcionando; `daily_summaries` con 20–23 nov.
+
+**Lo hecho**
+
+- Barra inferior **Hoy · Cuerpo · Historial**; **Perfil** como ícono arriba a la derecha (con flecha para volver). Wordmark ANATA centrado arriba en todas las pantallas (se corrigió un recorte de la última A que venía de antes).
+- **Hoy** (`js/today.js`): tarjeta "Tu cuerpo hoy" desde `GET /today` (titular, 3–5 líneas con punto de color, píldora de estado) → check-in de 1 toque (sensación 1–5; molestia sí/no con zona, lado e intensidad 1–10; con 7+ avisa que pedirá kinesiólogo) → tarjeta de decisión (Entrena / Ajusta / Descansa, intensidad sugerida en 40 px, 2 cosas que hacer y 2 que evitar, aviso y tip; en Descansa, el texto fijo "Descansar también es entrenar…") → chat.
+- El check-in guarda la sensación en `garmin_daily.feeling` y le pide la decisión al agente; el veredicto se enlaza al resumen del día (`daily_summaries.verdict_id`).
+- **Una conversación por día** (hora de Santiago). Ya no hay saludo automático: lo reemplazan la tarjeta y el check-in (también ahorra llamadas).
+- **Cuerpo** (`js/body.js`, `js/metrics.js`): una tarjeta por métrica (batería, sueño, estrés de ayer, pulso en reposo, recuperación de fondo, carga de la semana) con nombre simple, nombre Garmin pequeño, número grande, línea de traducción frente a tu normal, mini línea de 7 días en salvia e insignia "Aprendiendo tu normal · noche 3/21". Al tocar, se abre qué es, rangos y cómo leerlo. Disposición para entrenar y VO2 máx aparecen apagadas con una explicación honesta. Abajo, tus molestias de los últimos 30 días (7+ marcadas con "Ve al kinesiólogo").
+- **Historial** (`js/history.js`): un día por fila con color, decisión y frase; al tocar, el resumen completo, la decisión y "Ver la conversación".
+- **Perfil**: objetivo (gimnasio → rugby), estado de la banda Garmin (última lectura, días con datos) y el botón de captura (se activa en la Fase 4).
+- Marca (`css/anata.css`): paleta y degradado del doc, colores de estado (#4F6B4A blanco, #B08A3E negro, #8C4A3C blanco), Outfit, titulares 22 px semibold, cuerpo 16 px, números 40 px light, íconos de línea 1,5 px en oliva, sin emojis.
+- Textos de la app pasados de voseo a "tú".
+- Worker: `GET /today` ahora trae `last7` (mini líneas) y `calibration` (misma lógica que el agente).
+
+**Bugs encontrados y corregidos**
+
+- La app entraba dos veces al recargar (Supabase avisa "inicio de sesión" también con sesión guardada) y duplicaba los mensajes del chat.
+- El service worker guardaba `index.html` y el CSS para siempre: tu celular no veía versiones nuevas. Ahora es "red primero" y limpia cachés viejas.
+
+**Revisión a 390 px** (banco de pruebas con Playwright y datos simulados basados en los reales; 4 escenarios: día normal, con check-in, sin datos de la banda, molestia 8/10): en Hoy, Cuerpo, Historial y Perfil ningún texto se sale de su tarjeta ni se corta; el texto de lectura nunca baja de 16 px. Solo bajan a 13 px las etiquetas que el doc pide pequeñas (nombre Garmin, insignia, rótulos de la barra, hora de los mensajes).
+
+**Pendiente / para observar**
+
+- Probar en tu celular con tu sesión real (el banco de pruebas usa datos simulados). Si la app no se actualiza, ciérrala y ábrela de nuevo una vez: el service worker viejo se reemplaza en esa apertura.
+- Las mini líneas tienen huecos en los días sin dato (por ejemplo, el 21 sin sueño): es intencional, para no inventar.
