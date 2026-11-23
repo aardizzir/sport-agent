@@ -415,3 +415,31 @@ Pega aquí el resumen que entrega Claude Code al cerrar cada fase.
 - Criterio de éxito (3 días reales en Supabase): hoy hay 2 (19 y 20 nov) porque la banda empezó el 19. El tercero llega solo con el cron del sábado 21 a las 06:30.
 - `GET /today` se probó con datos simulados y responde 401 sin sesión. Con tu sesión real se prueba en la Fase 3, cuando la pantalla Hoy lo use.
 - El token de Cloudflare (30 días) quedó guardado en el entorno de Claude Code para desplegar en las próximas fases.
+
+### Fase 2 · Agente que traduce — 23 nov 2026 (cerrada)
+
+**Antes de empezar (chequeo):** el cron de la Fase 1 trajo solo los días 21, 22 y 23 → 5 días en `garmin_daily`; criterio de la Fase 1 cumplido. El 21 no tiene sueño (la banda no registró esa noche).
+
+**Lo hecho**
+
+- Modelo: **`claude-sonnet-5-5` (Claude Sonnet 5.5)**, confirmado en las respuestas de la API. Se llama con el SDK oficial `@anthropic-ai/sdk` (v1.12). Pensamiento adaptativo; esfuerzo `low` en el chat (rápido) y `medium` en el resumen diario. Fallback del lado del servidor activado (`fallbacks: "default"`): si el modelo declina por una categoría de seguridad, la API reintenta sola.
+- `worker/context.js`: antes de llamar a Claude el Worker lee perfil, `garmin_daily` de 14 días, molestias activas, últimas 5 decisiones y patrones, y arma un bloque compacto: hoy, ayer, "tu normal" (promedio de los días anteriores, máx. 7), tabla de 14 días, calibración y reglas activas.
+- Calibración calculada en código: estado de VFC (noches con VFC < 21), ratio de carga (< 14 días de historia) y "tu normal" (< 7 días). Se guarda en `calibrating_metrics`.
+- Reglas de ANATA calculadas en código: pulso +5 dos días seguidos, batería ≤ 25 y sueño < 60, molestia ≥ 7/10. Si hay una regla activa, el color nunca queda en verde; con molestia de 7 o más, queda en Descansa.
+- `worker/prompt.js`: system prompt v3. Mantiene las reglas del v2.0 y agrega los bloques A (hablar simple), B (gimnasio → rugby) y C (formato `<<<SUMMARY>>>`), con el traductor completo. Cambios frente al v2.0: lenguaje simple en vez de "terminología precisa"; derivación al kinesiólogo desde 7/10 sin esperar 72 h; etiquetas del veredicto "Entrena / Ajusta / Descansa"; fecha y hora en Santiago (antes salían en UTC). La parte fija (~6.600 tokens) va en caché: cada llamada la lee a una fracción del costo.
+- `worker/summary.js`: modo `daily_summary`. El cron de las 06:30 lo genera después de traer Garmin; el de las 09:30 lo regenera solo si los datos cambiaron. Sin datos de anoche guarda el texto fijo "Tu banda aún no sincroniza…" sin llamar a Claude. La línea de calibración la arma el código con los números exactos.
+- Tabla nueva `daily_summaries` con RLS. `GET /today` ahora devuelve también `summary`. Ruta admin `POST /admin/summary?date=&force=1&save=0`.
+
+**3 resúmenes de ejemplo (datos reales, guardados en Supabase)**
+
+- **20 nov · Ajusta · "Buena energía, sueño sólido"** — Batería 57 (alta), sueño 82 (8 h 28 min), pulso 65, ayer fuerza 106 min con carga 300. 90 palabras.
+- **22 nov · Ajusta · "Cuerpo cansado, hoy ajusta"** — Batería 21 (muy baja) frente a tu normal de 57, sueño 50 (malo). Se activó la regla batería ≤ 25 + sueño < 60. 82 palabras.
+- **23 nov · Entrena · "Cuerpo recargado, buen punto de partida"** — Batería 94 (+55 sobre tu normal), sueño 89 (+23), pulso 61 (-6), estrés de ayer 58 (sobre tu normal de 43). 88 palabras.
+- Revisión "Hablar simple" (automática): 0 siglas sin explicar, 0 frases de 20 palabras o más, todos bajo 120 palabras, de 3 a 5 líneas, cada número comparado con tu normal (o se dice que aún no hay normal). Sin VO2 máx ni Disposición para entrenar inventados.
+- Costo por resumen: ~1.500 tokens de entrada nuevos + ~6.600 leídos de caché + ~300 de salida.
+
+**Pendiente / para observar**
+
+- Con menos de 7 días, "tu normal" es provisorio y a veces sale de 1 solo día. Mejora sola con el uso.
+- El chat ya usa el prompt v3 y los datos de Garmin, pero la pantalla Hoy todavía no muestra el resumen: eso es la Fase 3.
+- `verdict_id` en `daily_summaries` queda vacío hasta que exista el check-in de 1 toque (Fase 3).
