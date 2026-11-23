@@ -1,10 +1,13 @@
 /**
- * ANATA · Cloudflare Worker `sport-agent-api` (v0.8.0 · Fase 2 ANATA Personal)
+ * ANATA · Cloudflare Worker `sport-agent-api` (v0.9.0 · Fase 4 ANATA Personal)
  *
  * Rutas:
  *   POST /  o  POST /chat        → chat con ANATA (igual que antes, ver chat.js)
  *   GET  /today                  → fila de hoy de garmin_daily + promedios de 7 días + resumen del día
  *                                  (requiere el JWT de Supabase del usuario)
+ *   POST /garmin/screenshot      → lee una captura de Garmin Connect con Claude (Plan B, no guarda)
+ *   POST /garmin/manual          → guarda datos de captura confirmada o formulario manual (Plan C)
+ *   POST /today/refresh          → rehace "Tu cuerpo hoy"
  *   POST /admin/garmin/sync      → trae N días de Garmin y hace upsert (?days=3)
  *                                  devuelve qué métricas llegaron. Header X-Admin-Token.
  *   GET  /admin/garmin/raw       → respuesta cruda guardada de un día (?date=YYYY-MM-DD)
@@ -20,6 +23,8 @@ import { handleChat } from './chat.js';
 import { fetchGarminDays, presenceReport, localDate, localHour, addDays, TZ } from './garmin.js';
 import { generateDailySummary } from './summary.js';
 import { computeCalibration } from './context.js';
+import { handleUserRoute, cleanFields } from './user.js';
+import { extractScreenshot } from './claude.js';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -58,13 +63,22 @@ async function upsertGarminRows(env, rows) {
   const empty = rows.filter(r => !hasAnyData(r)).map(r => r.date);
 
   if (full.length) {
-    const payload = full.map(r => ({ ...r, user_id: env.ANATA_USER_ID }));
-    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/garmin_daily?on_conflict=user_id,date`, {
-      method: 'POST',
-      headers: serviceHeaders(env, { Prefer: 'resolution=merge-duplicates,return=minimal' }),
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error(`Supabase upsert garmin_daily ${res.status}: ${(await res.text()).slice(0, 300)}`);
+    // Se guarda fila por fila sin campos null: así un dato cargado por captura o
+    // a mano (p. ej. Disposición para entrenar) no se borra cuando la API no lo trae.
+    // También se conservan raw_json.screenshot / raw_json.manual y el origen.
+    const prevRes = await fetch(`${env.SUPABASE_URL}/rest/v1/garmin_daily?select=date,source,screenshot:raw_json->screenshot,manual:raw_json->manual&user_id=eq.${env.ANATA_USER_ID}&date=in.(${full.map(r => r.date).join(',')})`, { headers: serviceHeaders(env) });
+    const prev = Object.fromEntries((prevRes.ok ? await prevRes.json() : []).map(p => [p.date, p]));
+    await Promise.all(full.map(async r => {
+      const p = prev[r.date];
+      const row = Object.fromEntries(Object.entries({ ...r, user_id: env.ANATA_USER_ID }).filter(([, v]) => v !== null && v !== undefined));
+      row.raw_json = { ...r.raw_json, ...(p?.screenshot ? { screenshot: p.screenshot } : {}), ...(p?.manual ? { manual: p.manual } : {}) };
+      const res = await fetch(`${env.SUPABASE_URL}/rest/v1/garmin_daily?on_conflict=user_id,date`, {
+        method: 'POST',
+        headers: serviceHeaders(env, { Prefer: 'resolution=merge-duplicates,return=minimal' }),
+        body: JSON.stringify(row),
+      });
+      if (!res.ok) throw new Error(`Supabase upsert garmin_daily ${res.status}: ${(await res.text()).slice(0, 300)}`);
+    }));
   }
   if (empty.length) {
     await fetch(`${env.SUPABASE_URL}/rest/v1/garmin_daily?user_id=eq.${env.ANATA_USER_ID}&source=eq.api&date=in.(${empty.join(',')})`, {
@@ -157,6 +171,14 @@ async function handleToday(request, env) {
   const lastRun = lastRunRes.ok ? (await lastRunRes.json())[0] || null : null;
   const summary = summaryRes.ok ? (await summaryRes.json())[0] || null : null;
 
+  // "¿Qué tan duro fue?" de hoy (daily_states). La sesión ya quedó validada arriba
+  // (garmin_daily respondió con el JWT); se lee con service role para no depender del RLS.
+  let effortToday = null;
+  try {
+    const er = await fetch(`${env.SUPABASE_URL}/rest/v1/daily_states?select=training_rpe&user_id=eq.${env.ANATA_USER_ID}&date=eq.${today}&limit=1`, { headers: serviceHeaders(env) });
+    if (er.ok) effortToday = (await er.json())[0]?.training_rpe ?? null;
+  } catch (e) { console.error('effortToday', e); }
+
   const todayRow = rows.find(r => r.date === today) || null;
   const previous7 = rows.filter(r => r.date < today); // "tu normal": los 7 días anteriores a hoy
 
@@ -164,6 +186,7 @@ async function handleToday(request, env) {
     date: today,
     timezone: TZ,
     summary,
+    effort_today: effortToday,
     today: todayRow,
     has_data_today: !!todayRow,
     averages_7d: averages(previous7),
@@ -205,6 +228,33 @@ async function handleAdmin(request, env, path) {
     return json(await res.json(), res.status);
   }
 
+  // Lectura de diagnóstico (solo tablas conocidas, filas del usuario de ANATA).
+  if (path === '/admin/peek' && request.method === 'GET') {
+    const table = url.searchParams.get('table');
+    if (url.searchParams.get('schema') === '1') {
+      const res = await fetch(`${env.SUPABASE_URL}/rest/v1/`, { headers: serviceHeaders(env) });
+      const spec = await res.json();
+      return json(spec.definitions?.[table] || { error: 'sin definición', tables: Object.keys(spec.definitions || {}) });
+    }
+    const allowed = ['daily_states', 'garmin_sync_runs', 'daily_summaries', 'aches', 'conversations', 'verdicts'];
+    if (!allowed.includes(table)) return json({ error: 'tabla no permitida' }, 400);
+    const order = { daily_states: 'created_at', garmin_sync_runs: 'ran_at', daily_summaries: 'date', aches: 'reported_at', conversations: 'updated_at', verdicts: 'created_at' }[table];
+    const limit = Math.min(parseInt(url.searchParams.get('limit') || '5', 10) || 5, 50);
+    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/${table}?select=*&user_id=eq.${env.ANATA_USER_ID}&order=${order}.desc&limit=${limit}`, { headers: serviceHeaders(env) });
+    return json(await res.json(), res.status);
+  }
+
+  // Prueba del Plan B sin sesión de usuario: lee una captura y NO guarda.
+  if (path === '/admin/screenshot' && request.method === 'POST') {
+    const body = await request.json().catch(() => ({}));
+    try {
+      const out = await extractScreenshot(env, { base64: String(body.image_base64 || '').replace(/^data:[^,]+,/, ''), mediaType: body.media_type || 'image/png', today: localDate() });
+      return json({ raw: out, cleaned: cleanFields(out).clean });
+    } catch (e) {
+      return json({ error: String(e.message || e) }, 502);
+    }
+  }
+
   if (path === '/admin/summary' && request.method === 'POST') {
     const date = url.searchParams.get('date') || localDate();
     try {
@@ -242,8 +292,11 @@ export default {
         return await handleChat(request, env, ctx, CORS);
       }
       if (request.method === 'GET' && path === '/today') return await handleToday(request, env);
+      if (request.method === 'POST' && ['/garmin/screenshot', '/garmin/manual', '/today/refresh', '/today/effort'].includes(path)) {
+        return await handleUserRoute(request, env, path, json);
+      }
       if (path.startsWith('/admin/')) return await handleAdmin(request, env, path);
-      if (request.method === 'GET' && path === '/') return json({ ok: true, service: 'ANATA sport-agent-api', version: '0.8.0' });
+      if (request.method === 'GET' && path === '/') return json({ ok: true, service: 'ANATA sport-agent-api', version: '0.9.0' });
       return json({ error: 'Not found' }, 404);
     } catch (e) {
       console.error('Worker error:', e);

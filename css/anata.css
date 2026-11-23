@@ -269,3 +269,37 @@
 #appMain .field-edit-btn, #appMain .install-instructions-btn, #appMain .profile-signout-btn { font-size: 16px; min-height: 44px; text-transform: none; letter-spacing: 0; }
 #appMain .discipline-badge { font-size: 13px; }
 #appMain .field-label { color: var(--anata-text-2); }
+
+/* ── Fase 4: hojas, formularios, botones de texto ── */
+.link-btn { background: none; border: none; padding: 12px 0 0; font-family: inherit; font-size: 16px; color: var(--anata-dark); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; text-align: left; }
+.card-label.inline { display: inline; font-weight: 400; margin: 0; }
+.add-ache { margin: 0 0 12px; }
+.field-actions { display: flex; flex-direction: column; gap: 8px; }
+.field-actions .btn-secondary { margin-top: 0; }
+
+.sheet-overlay { position: fixed; inset: 0; z-index: 300; background: rgba(0, 0, 0, 0.35); display: flex; align-items: flex-end; justify-content: center; opacity: 0; transition: opacity 0.2s; }
+.sheet-overlay.open { opacity: 1; }
+.sheet {
+  width: 100%; max-width: 520px; max-height: 88vh; overflow-y: auto; background: #FFFFFF;
+  border-radius: 24px 24px 0 0; padding: 20px var(--gutter) calc(24px + env(safe-area-inset-bottom, 0px));
+  transform: translateY(24px); transition: transform 0.2s;
+}
+.sheet-overlay.open .sheet { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) { .sheet-overlay, .sheet { transition: none; } }
+.sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.sheet-close { width: 44px; height: 44px; margin: -10px -10px 0 0; display: grid; place-items: center; background: none; border: none; cursor: pointer; color: var(--anata-dark); flex-shrink: 0; }
+.sheet-close svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+.file-btn { display: grid; place-items: center; }
+
+.form { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+.form-field { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 16px; font-weight: 500; color: var(--anata-black); }
+.form-hint { font-size: 13px; font-weight: 400; color: var(--anata-text-2); }
+.form-input { width: 100%; min-height: 48px; border-radius: 12px; border: 1px solid rgba(0, 0, 0, 0.18); padding: 0 14px; font-family: inherit; font-size: 16px; color: var(--anata-black); background: #FFFFFF; }
+.form-input:focus { outline: 2px solid var(--anata-dark); outline-offset: 1px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-inline { display: flex; align-items: center; gap: 8px; font-size: 16px; color: var(--anata-text-2); }
+.form-error { font-size: 16px; color: var(--st-stop); min-height: 0; margin: 0; }
+.form .btn-primary { margin-top: 4px; }
+.capture-thumb { width: 100%; max-height: 220px; object-fit: contain; border-radius: 12px; border: 1px solid var(--hairline); margin-bottom: 12px; background: #F5F5F5; }
+.capture-status { margin-top: 12px; }

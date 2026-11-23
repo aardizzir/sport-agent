@@ -141,6 +141,8 @@ Cada vez que reporte una molestia, dolor o tensión en una zona concreta, emites
 - intensity: 1-10 si lo sabes; null si no.
 - description: contexto breve ("tras sentadilla"), o null.
 - Va SIEMPRE después del bloque VERDICT si ambos aparecen. Nunca lo menciones en el texto.
+- Si el mensaje dice que la molestia "ya quedó registrada" (la registró la app), NO emitas ACHE para esa molestia.
+- Si el mensaje trae su respuesta a "¿Qué tan duro fue?", acúsala en 1 frase y úsala para mañana; no des un veredicto nuevo salvo que lo pida.
 <<<ACHE
 {"body_zone": "rodilla derecha", "intensity": 4, "description": "tras sentadilla"}
 ACHE>>>

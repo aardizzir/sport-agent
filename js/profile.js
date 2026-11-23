@@ -1,6 +1,7 @@
 import { supabaseClient } from './supabase.js';
 import { state } from './state.js';
 import { longDate } from './utils.js';
+import './capture.js';
 
 // ── Configuración de campos editables ──
 // raw = valor crudo para el input; format() = cómo se muestra en modo lectura;
@@ -97,7 +98,10 @@ function garminSection() {
         <div class="field-row"><span class="field-value">${status}</span></div>
         ${typeof days === 'number' ? `<div class="field-row"><span class="field-value">${days} ${days === 1 ? 'día' : 'días'} con datos desde el ${d.history.first_date ? longDate(d.history.first_date) : '—'}.</span></div>` : ''}
         <div class="field-row"><span class="field-value">Leo tus datos cada mañana a las 6:30 y de nuevo a las 9:30.</span></div>
-        <div class="field-row"><button class="btn-secondary" disabled>Subir una captura (muy pronto)</button></div>
+        <div class="field-row field-actions">
+          <button class="btn-secondary" onclick="openCapture()">Subir una captura</button>
+          <button class="btn-secondary" onclick="openManual()">Llenar a mano</button>
+        </div>
       </div>`;
 }
 

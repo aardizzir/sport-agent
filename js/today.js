@@ -1,9 +1,11 @@
-// ANATA · Pantalla Hoy (Fase 3)
+// ANATA · Pantalla Hoy (Fases 3 y 4)
 // Orden: tarjeta "Tu cuerpo hoy" → check-in de 1 toque → tarjeta de decisión → chat.
 import { supabaseClient, WORKER_URL } from './supabase.js';
 import { state } from './state.js';
 import { escapeHtml, formatText, localDate } from './utils.js';
 import { STATUS } from './metrics.js';
+import { achePickerHTML, bindAchePicker, acheReady, saveAche, zoneName } from './aches.js';
+import './capture.js';
 
 // Textos fijos de la app (doc, sección Branding).
 export const TEXT = {
@@ -15,8 +17,6 @@ export const TEXT = {
 const FEELINGS = [
   { v: 1, label: 'Muy mal' }, { v: 2, label: 'Mal' }, { v: 3, label: 'Normal' }, { v: 4, label: 'Bien' }, { v: 5, label: 'Muy bien' },
 ];
-const ZONES = ['Tobillo', 'Rodilla', 'Cadera', 'Isquiotibial', 'Lumbar', 'Hombro', 'Cuello', 'Otra'];
-const SIDES = ['Izquierda', 'Derecha', 'Ambos'];
 
 const checkin = { feeling: null, ache: null, zone: null, side: null, intensity: null, sent: false };
 
@@ -64,6 +64,7 @@ export async function loadTodayPanel() {
   const slot = document.createElement('div');
   slot.id = 'decision-slot';
   el.appendChild(slot);
+  state.effortToday = data?.effort_today ?? null;
   if (verdict) {
     checkin.sent = true;
     renderDecision(verdict.raw_json);
@@ -97,19 +98,23 @@ function summaryCard(data) {
       <h2 class="card-title">${escapeHtml(s.headline)}</h2>
       <ul class="summary-lines">
         ${(s.lines || []).map(l => `<li><span class="line-dot ${dotCls}"></span><span>${escapeHtml(l)}</span></li>`).join('')}
-      </ul>`;
+      </ul>
+      <button class="link-btn" onclick="openCapture()">¿Falta un dato? Súbelo con una captura</button>`;
   } else if (s && s.status === 'no_data') {
     inner = `
       <div class="card-top"><span class="card-kicker" data-small-ok>Tu cuerpo hoy</span></div>
       <h2 class="card-title">Esperando tu banda</h2>
       <p class="card-text">${escapeHtml(TEXT.noData)}</p>
-      <button class="btn-secondary" onclick="switchTab('perfil')">Subir una captura</button>`;
+      <button class="btn-primary" onclick="openCapture()">Subir una captura</button>
+      <button class="btn-secondary" onclick="openManual()">Llenar a mano</button>`;
   } else {
     const hasData = !!data?.has_data_today;
     inner = `
       <div class="card-top"><span class="card-kicker" data-small-ok>Tu cuerpo hoy</span></div>
       <h2 class="card-title">${hasData ? 'Tu resumen está en camino' : 'Esperando tu banda'}</h2>
-      <p class="card-text">${hasData ? 'Ya llegaron tus datos. El resumen se arma cada mañana a las 6:30.' : escapeHtml(TEXT.noData)}</p>`;
+      <p class="card-text">${hasData ? 'Ya llegaron tus datos. El resumen se arma cada mañana a las 6:30.' : escapeHtml(TEXT.noData)}</p>
+      ${hasData ? '' : `<button class="btn-primary" onclick="openCapture()">Subir una captura</button>
+      <button class="btn-secondary" onclick="openManual()">Llenar a mano</button>`}`;
   }
   card.innerHTML = `
     ${firstDay ? `<p class="card-text first-day">${escapeHtml(TEXT.firstDay)}</p>` : ''}
@@ -138,7 +143,7 @@ function checkinCard() {
   card.id = 'checkin-card';
   const render = () => {
     const showAche = checkin.ache === true;
-    const ready = checkin.feeling && (checkin.ache === false || (showAche && checkin.zone && checkin.intensity));
+    const ready = checkin.feeling && (checkin.ache === false || (showAche && acheReady(checkin)));
     card.innerHTML = `
       <h3 class="card-subtitle">¿Cómo te sientes?</h3>
       <div class="scale-row" role="group" aria-label="Cómo te sientes, del 1 al 5">
@@ -149,41 +154,29 @@ function checkinCard() {
         <button class="chip ${checkin.ache === false ? 'on' : ''}" data-ache="no">No</button>
         <button class="chip ${checkin.ache === true ? 'on' : ''}" data-ache="si">Sí</button>
       </div>
-      ${showAche ? `
-        <p class="card-label">¿Dónde?</p>
-        <div class="chip-row wrap">${ZONES.map(z => `<button class="chip ${checkin.zone === z ? 'on' : ''}" data-zone="${z}">${z}</button>`).join('')}</div>
-        ${checkin.zone && !['Lumbar', 'Cuello', 'Otra'].includes(checkin.zone) ? `
-          <p class="card-label">¿Qué lado?</p>
-          <div class="chip-row">${SIDES.map(s => `<button class="chip ${checkin.side === s ? 'on' : ''}" data-side="${s}">${s}</button>`).join('')}</div>` : ''}
-        <p class="card-label">¿Cuánto te molesta? (1 a 10)</p>
-        <div class="pain-row">${Array.from({ length: 10 }, (_, i) => i + 1).map(n => `<button class="pain-btn ${checkin.intensity === n ? 'on' : ''} ${n >= 7 ? 'high' : ''}" data-pain="${n}">${n}</button>`).join('')}</div>
-        ${checkin.intensity >= 7 ? `<p class="card-warning">Con ${checkin.intensity}/10 te voy a pedir que veas al kinesiólogo antes de entrenar esa zona.</p>` : ''}
-      ` : ''}
+      ${showAche ? achePickerHTML(checkin) : ''}
       <button class="btn-primary" id="checkin-send" ${ready ? '' : 'disabled'}>Ver mi decisión de hoy</button>`;
     card.querySelectorAll('[data-feel]').forEach(b => b.onclick = () => { checkin.feeling = Number(b.dataset.feel); render(); });
     card.querySelectorAll('[data-ache]').forEach(b => b.onclick = () => { checkin.ache = b.dataset.ache === 'si'; render(); });
-    card.querySelectorAll('[data-zone]').forEach(b => b.onclick = () => { checkin.zone = b.dataset.zone; checkin.side = null; render(); });
-    card.querySelectorAll('[data-side]').forEach(b => b.onclick = () => { checkin.side = b.dataset.side; render(); });
-    card.querySelectorAll('[data-pain]').forEach(b => b.onclick = () => { checkin.intensity = Number(b.dataset.pain); render(); });
+    bindAchePicker(card, checkin, render);
     card.querySelector('#checkin-send').onclick = sendCheckin;
   };
   render();
   return card;
 }
 
-function zoneText() {
-  if (!checkin.zone) return '';
-  const z = checkin.zone.toLowerCase();
-  if (!checkin.side || checkin.side === 'Ambos') return checkin.side === 'Ambos' ? `ambos lados (${z})` : z;
-  return `${z} ${checkin.side === 'Izquierda' ? 'izquierda' : 'derecha'}`.replace(/(tobillo|hombro|isquiotibial) izquierda/, '$1 izquierdo').replace(/(tobillo|hombro|isquiotibial) derecha/, '$1 derecho');
-}
-
 async function sendCheckin() {
   if (checkin.sent || state.isStreaming) return;
   checkin.sent = true;
   const f = FEELINGS.find(x => x.v === checkin.feeling);
+  // La molestia se guarda directo en `aches` (no depende de que el agente la marque).
+  let acheSaved = false;
+  if (checkin.ache) {
+    try { await saveAche(checkin, 'check-in de la mañana'); acheSaved = true; }
+    catch (e) { console.warn('molestia no guardada:', e.message); }
+  }
   const ache = checkin.ache
-    ? `Tengo una molestia en ${zoneText()}, ${checkin.intensity}/10.`
+    ? `Tengo una molestia en ${zoneName(checkin)}, ${checkin.intensity}/10${acheSaved ? ' (ya quedó registrada)' : ''}.`
     : 'No tengo molestias.';
   const message = `Check-in de hoy: me siento ${f.label.toLowerCase()} (${f.v}/5). ${ache} ¿Qué hago hoy?`;
 
@@ -200,7 +193,7 @@ async function sendCheckin() {
 // ─────────────────────────────────────────────────────────────
 // Tarjeta de decisión
 // ─────────────────────────────────────────────────────────────
-export function renderDecision(data, { link = false } = {}) {
+export function renderDecision(data) {
   const slot = document.getElementById('decision-slot');
   if (!slot || !data) return;
   document.getElementById('checkin-card')?.remove();
@@ -226,7 +219,52 @@ export function renderDecision(data, { link = false } = {}) {
       ${data.warning ? `<p class="card-note">${escapeHtml(data.warning)}</p>` : ''}
       ${data.micro_tip ? `<p class="card-tip"><strong>Tip:</strong> ${escapeHtml(data.micro_tip)}</p>` : ''}
     </article>`;
+  if (data.status !== 'stop' || state.effortToday) slot.appendChild(effortCard());
 }
+
+// ─────────────────────────────────────────────────────────────
+// Después de entrenar (opcional): "¿Qué tan duro fue? 1-10" → daily_states
+// ─────────────────────────────────────────────────────────────
+const EFFORT_WORDS = { 1: 'Muy suave', 3: 'Suave', 5: 'Moderado', 7: 'Duro', 9: 'Muy duro', 10: 'Al límite' };
+
+function effortCard() {
+  const card = document.createElement('article');
+  card.className = 'card effort';
+  const render = (saving = false, error = '') => {
+    const v = state.effortToday;
+    card.innerHTML = v && !saving && !error
+      ? `<h3 class="card-subtitle">Después de entrenar</h3>
+         <p class="card-text">Hoy fue un <strong>${v}/10</strong>${EFFORT_WORDS[v] ? ` (${EFFORT_WORDS[v].toLowerCase()})` : ''}. Mañana lo tengo en cuenta.</p>
+         <button class="link-btn" data-change>Cambiar</button>`
+      : `<h3 class="card-subtitle">Después de entrenar <span class="card-label inline">(opcional)</span></h3>
+         <p class="card-text">¿Qué tan duro fue? 1 es muy suave, 10 al límite.</p>
+         <div class="pain-row">${Array.from({ length: 10 }, (_, i) => i + 1).map(n => `<button type="button" class="pain-btn ${v === n ? 'on' : ''}" data-rpe="${n}" aria-label="${n} de 10" ${saving ? 'disabled' : ''}>${n}</button>`).join('')}</div>
+         ${error ? `<p class="card-warning">${escapeHtml(error)}</p>` : ''}`;
+    card.querySelector('[data-change]')?.addEventListener('click', () => { state.effortToday = null; render(); state.effortToday = v; });
+    card.querySelectorAll('[data-rpe]').forEach(b => b.onclick = () => saveEffort(Number(b.dataset.rpe)));
+  };
+  const saveEffort = async rpe => {
+    render(true);
+    try {
+      const token = await authToken();
+      const res = await fetch(`${WORKER_URL}/today/effort`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rpe }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(out.error || `Error ${res.status}`);
+      state.effortToday = rpe;
+      render();
+    } catch (e) {
+      render(false, `No se pudo guardar: ${e.message}`);
+    }
+  };
+  render();
+  return card;
+}
+
+window.__reloadToday = () => loadTodayPanel();
 
 // Enlaza el veredicto recién guardado con el resumen del día (daily_summaries.verdict_id).
 export async function linkVerdictToSummary(verdictId) {

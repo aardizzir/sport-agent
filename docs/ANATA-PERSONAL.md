@@ -472,3 +472,37 @@ Pega aquí el resumen que entrega Claude Code al cerrar cada fase.
 
 - Probar en tu celular con tu sesión real (el banco de pruebas usa datos simulados). Si la app no se actualiza, ciérrala y ábrela de nuevo una vez: el service worker viejo se reemplaza en esa apertura.
 - Las mini líneas tienen huecos en los días sin dato (por ejemplo, el 21 sin sueño): es intencional, para no inventar.
+
+### Fase 4 · Pulido y prueba — 23 nov 2026 (cerrada)
+
+**Lo hecho**
+
+- **Plan B · Captura** (`POST /garmin/screenshot`, `js/capture.js`): subes una captura de Garmin Connect (la app la achica a 1.600 px), Claude Sonnet 5.5 la lee con un esquema JSON fijo (valores que no se ven quedan en null, nunca se estiman), la app te muestra lo que leyó para confirmar o corregir y recién ahí se guarda (`POST /garmin/manual`, source `screenshot`). Prueba con una pantalla tipo "Mi día": 7 de 7 valores visibles leídos exactos (incluida Disposición para entrenar 68 y 7 h 12 min → 432), estrés y VO2 máx en null.
+- **Plan C · Manual**: formulario de 4 campos (batería al despertar, puntuación de sueño, horas y minutos dormidos, cómo te sientes 1–5), source `manual`.
+- Al guardar por captura o a mano, el resumen "Tu cuerpo hoy" se rehace solo.
+- Los datos cargados por captura o a mano **no se borran** cuando la lectura automática de la API no los trae (p. ej. Disposición para entrenar). Lo que vino de cada fuente queda en `raw_json.screenshot` / `raw_json.manual`.
+- Puntos de entrada: tarjeta sin datos en Hoy ("Subir una captura" / "Llenar a mano"), enlace "¿Falta un dato?" en el resumen, tarjeta de Disposición para entrenar en Cuerpo y Perfil.
+- **Molestias** (`js/aches.js`): registro rápido por zona, lado e intensidad 1–10, desde el check-in y desde Cuerpo ("Registrar una molestia"). Se guarda directo en `aches` (ya no depende de que el agente la marque; el agente no la duplica). Con 7/10 o más: mensaje de derivación al kinesiólogo, sin plan para esa zona, y el resumen se rehace (la regla lo pone en Descansa).
+- **Después de entrenar**: tarjeta opcional "¿Qué tan duro fue? 1–10" bajo la decisión, guardada en `daily_states.training_rpe` (`POST /today/effort`). El agente la ve al día siguiente en su contexto.
+- Cuerpo muestra Disposición para entrenar como métrica real cuando llegó por captura.
+- PWA: los íconos no medían lo que declaraba el manifest (400 y 1.067 px en vez de 192 y 512); se ajustaron a 192, 512 y 180 (Apple).
+- Rutas admin de diagnóstico: `GET /admin/peek?table=` y `POST /admin/screenshot` (prueba de lectura sin guardar).
+
+**Revisión final**
+
+- Cron: corrió solo los días 21, 22 y 23 a las 06:30 y 09:30, todos OK (`garmin_sync_runs`).
+- Flujo de un día completo en el banco de pruebas (check-in con molestia → decisión → esfuerzo → Cuerpo → Historial → Hoy): sin errores en consola.
+- Las rutas nuevas rechazan pedidos sin sesión o con sesión inválida (401).
+- Manifest: nombre, `start_url` y `scope` en `/sport-agent/`, modo standalone, íconos 192/512 correctos, service worker red-primero.
+
+**Qué observar durante la semana de prueba (27 nov – 3 dic)**
+
+1. **Hábito**: ¿abres la app las 7 mañanas sin recordatorio? Anota qué te hizo abrirla (o no).
+2. **60 segundos**: ¿entiendes "Tu cuerpo hoy" de una lectura? Marca cualquier frase que hayas tenido que releer.
+3. **Datos solos**: ¿la tarjeta tiene datos a las 7:00? Si un día dice "Esperando tu banda", prueba la captura y anota si funcionó a la primera.
+4. **Decisión**: ¿la decisión calzó con cómo te sentiste entrenando? Responde "¿Qué tan duro fue?" cada día: es lo que más afina a ANATA.
+5. **Molestias**: si aparece alguna, regístrala aunque sea 2/10; los patrones se arman con repeticiones.
+6. **Aprendizaje**: al final de la semana, ¿puedes explicar con tus palabras Body Battery, puntuación de sueño y estrés?
+7. **Calibración**: el ratio de carga debería aparecer cerca del 2 de diciembre y el estado de VFC cerca del 11, si usas la banda todas las noches.
+8. **Costo**: revisa el gasto en la consola de Anthropic después de la semana 1 (estimado: 1 resumen diario + check-in + chat).
+9. **Diseño**: anota tus dudas de diseño y branding con ejemplos concretos de uso; son el insumo de la sesión de diseño.

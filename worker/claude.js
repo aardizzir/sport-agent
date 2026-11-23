@@ -54,3 +54,46 @@ export async function completeText(env, { system, messages, effort = 'medium', m
   const text = response.content.filter(b => b.type === 'text').map(b => b.text).join('');
   return { text, usage: response.usage, model: response.model };
 }
+
+// ─────────────────────────────────────────────────────────────
+// Plan B · Leer una captura de Garmin Connect (visión + JSON con esquema)
+// ─────────────────────────────────────────────────────────────
+const nullable = type => ({ anyOf: [{ type }, { type: 'null' }] });
+const SCREENSHOT_FIELDS = {
+  date: { ...nullable('string'), description: 'Fecha a la que corresponden los datos, YYYY-MM-DD, solo si se ve en la captura' },
+  body_battery_wake: { ...nullable('integer'), description: 'Body Battery al despertar (0-100)' },
+  sleep_score: { ...nullable('integer'), description: 'Puntuación de sueño (0-100)' },
+  sleep_minutes: { ...nullable('integer'), description: 'Duración total del sueño en minutos' },
+  stress_avg: { ...nullable('integer'), description: 'Estrés promedio del día (0-100)' },
+  resting_hr: { ...nullable('integer'), description: 'Frecuencia cardíaca en reposo (lpm)' },
+  hrv_last_night_ms: { ...nullable('integer'), description: 'Promedio de VFC de la noche (ms)' },
+  hrv_status: { anyOf: [{ type: 'string', enum: ['balanced', 'unbalanced', 'low', 'poor', 'none'] }, { type: 'null' }], description: 'Estado de VFC' },
+  training_readiness: { ...nullable('integer'), description: 'Disposición para entrenar / Training Readiness (1-100)' },
+  vo2max: { ...nullable('number'), description: 'VO2 máx' },
+};
+const SCREENSHOT_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: [...Object.keys(SCREENSHOT_FIELDS), 'notes'],
+  properties: { ...SCREENSHOT_FIELDS, notes: { type: 'string', description: 'Una frase en español: qué pantalla es y qué no se pudo leer' } },
+};
+
+export async function extractScreenshot(env, { base64, mediaType, today }) {
+  const response = await anthropicClient(env).beta.messages.create({
+    model: MODEL,
+    max_tokens: 4000,
+    output_config: { effort: 'low', format: { type: 'json_schema', schema: SCREENSHOT_SCHEMA } },
+    betas: [FALLBACK_BETA],
+    fallbacks: 'default',
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+        { type: 'text', text: `Es una captura de la app Garmin Connect (puede estar en español o en inglés). Extrae solo los valores que se leen con claridad en la imagen. Si un valor no aparece o no se lee bien, usa null: nunca lo estimes ni lo calcules. Convierte horas a minutos (7 h 42 min = 462). Hoy es ${today}; si la captura dice "Hoy"/"Today", la fecha es ${today}.` },
+      ],
+    }],
+  });
+  if (response.stop_reason === 'refusal') throw new Error('Claude no pudo leer la captura');
+  const text = response.content.filter(b => b.type === 'text').map(b => b.text).join('');
+  return JSON.parse(text);
+}

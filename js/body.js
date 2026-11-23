@@ -5,7 +5,9 @@
 import { supabaseClient } from './supabase.js';
 import { state } from './state.js';
 import { escapeHtml, localDate, addDays } from './utils.js';
-import { METRICS, MUTED, calibrationBadge } from './metrics.js';
+import { METRICS, MUTED, READINESS, calibrationBadge } from './metrics.js';
+import './aches.js';
+import './capture.js';
 import { fetchToday } from './today.js';
 
 const isNum = v => typeof v === 'number' && Number.isFinite(v);
@@ -78,7 +80,7 @@ function metricCard(m, data) {
   return card;
 }
 
-function mutedCard(m) {
+function mutedCard(m, action) {
   const card = document.createElement('article');
   card.className = 'card metric-card muted';
   card.innerHTML = `
@@ -86,7 +88,9 @@ function mutedCard(m) {
       <span class="metric-name">${m.name}</span>
       <span class="metric-garmin" data-small-ok>${m.garmin}</span>
     </div>
-    <p class="metric-line">${escapeHtml(m.note)}</p>`;
+    <p class="metric-line">${escapeHtml(m.note)}</p>
+    ${action ? `<button class="link-btn" data-action>${action.label}</button>` : ''}`;
+  if (action) card.querySelector('[data-action]').onclick = action.run;
   return card;
 }
 
@@ -102,7 +106,11 @@ function relDay(iso) {
 async function achesSection() {
   const wrap = document.createElement('section');
   wrap.className = 'aches';
-  wrap.innerHTML = `<h2 class="section-title">Tus molestias</h2>`;
+  wrap.innerHTML = `
+    <div class="section-head-row">
+      <h2 class="section-title">Tus molestias</h2>
+    </div>
+    <button class="btn-secondary add-ache" onclick="openAcheSheet()">Registrar una molestia</button>`;
   const since = new Date(Date.now() - 30 * 86400000).toISOString();
   const { data, error } = await supabaseClient.from('aches')
     .select('body_zone, intensity, description, reported_at')
@@ -137,6 +145,8 @@ async function achesSection() {
   return wrap;
 }
 
+window.__reloadBody = () => { state.today = null; loadCuerpo(); };
+
 export async function loadCuerpo() {
   const container = document.getElementById('body-content');
   if (!container || !state.currentUser) return;
@@ -160,6 +170,8 @@ export async function loadCuerpo() {
   container.appendChild(intro);
 
   for (const m of METRICS) container.appendChild(metricCard(m, data));
-  for (const m of MUTED) container.appendChild(mutedCard(m));
+  if (data.today?.training_readiness != null) container.appendChild(metricCard(READINESS, data));
+  else container.appendChild(mutedCard({ ...MUTED[0], note: 'Garmin no la comparte por la API. Si quieres usarla en tu decisión, sube una captura de esa pantalla.' }, { label: 'Subir una captura', run: () => window.openCapture?.() }));
+  container.appendChild(mutedCard(MUTED[1]));
   container.appendChild(await achesSection());
 }

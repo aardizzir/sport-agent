@@ -110,6 +110,17 @@ export const METRICS = [
   },
 ];
 
+// Disposición para entrenar: la API no la entrega; aparece si llegó por captura.
+export const READINESS = {
+  key: 'readiness', col: 'training_readiness', name: 'Tu disposición para entrenar', garmin: 'Training Readiness · por captura',
+  format: v => (isNum(v) ? String(v) : '—'),
+  bands: [{ max: 24, label: 'pobre' }, { max: 49, label: 'baja' }, { max: 74, label: 'moderada' }, { max: 94, label: 'alta' }, { max: 100, label: 'óptima' }],
+  line(v) { const b = band(v, this.bands); return b ? `Disposición ${b.label} para entrenar fuerte.` : 'Sin dato hoy.'; },
+  what: 'La nota de Garmin a qué tan listo estás para entrenar fuerte. Mezcla sueño, recuperación, VFC, carga y estrés.',
+  ranges: '95–100 óptima · 75–94 alta · 50–74 moderada · 25–49 baja · 1–24 pobre',
+  read: 'No la miro como número suelto: la uso para la decisión del día y te explico qué factor la bajó.',
+};
+
 // Métricas que la API no entrega (o todavía no existen): se muestran apagadas.
 export const MUTED = [
   { name: 'Tu disposición para entrenar', garmin: 'Training Readiness', note: 'Garmin no la comparte por la API. Pronto podrás subirla con una captura.' },

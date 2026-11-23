@@ -59,11 +59,13 @@ export async function loadAnataContext({ env, userId, headers, asOf }) {
   const disciplineNames = base.disciplines.map(d => d.disciplines?.name).filter(Boolean);
   const primaryDiscipline = base.disciplines.find(d => d.is_primary)?.disciplines?.name || disciplineNames[0] || null;
 
-  const [patternsResult, garmin14, garminAll, verdicts5] = await Promise.all([
+  const [patternsResult, garmin14, garminAll, verdicts5, efforts] = await Promise.all([
     detectAndUpdatePatterns(userId, headers, url, primaryDiscipline),
     getJson(`${url}/rest/v1/garmin_daily?select=${GARMIN_COLS}&user_id=eq.${userId}&date=gte.${from14}&date=lte.${asOf}&order=date.asc`, headers).catch(e => { console.error('ctx/garmin14', e); return []; }),
     getJson(`${url}/rest/v1/garmin_daily?select=date,sleep_score,hrv_last_night_ms&user_id=eq.${userId}&date=lte.${asOf}&order=date.asc`, headers).catch(e => { console.error('ctx/garminAll', e); return []; }),
     getJson(`${url}/rest/v1/verdicts?select=raw_json,created_at&user_id=eq.${userId}&order=created_at.desc&limit=5`, headers).catch(e => { console.error('ctx/verdicts5', e); return []; }),
+    // "¿Qué tan duro fue?" de los últimos 7 días (Fase 4).
+    getJson(`${url}/rest/v1/daily_states?select=date,training_rpe&user_id=eq.${userId}&training_rpe=not.is.null&date=gte.${addDays(asOf, -7)}&order=date.asc`, headers).catch(() => []),
   ]);
 
   const today = garmin14.find(r => r.date === asOf) || null;
@@ -80,7 +82,7 @@ export async function loadAnataContext({ env, userId, headers, asOf }) {
 
   return {
     asOf, base, disciplineNames, patternsResult, verdicts5,
-    garmin14, garminAll, today, yesterday, previous7, normal, calibration, flags,
+    garmin14, garminAll, today, yesterday, previous7, normal, calibration, flags, efforts,
   };
 }
 
@@ -187,6 +189,9 @@ export function buildGarminBlock(ctx) {
   const nd = calibration.details.normal_7d ? ` — OJO: solo ${calibration.details.normal_7d.day} de 7 días, todavía aprendiendo su normal` : '';
   lines.push(`\nTU NORMAL (promedio de los días anteriores a hoy, máx. 7${nd}): batería al despertar ${v(n.body_battery_wake.value)} (${dd(n.body_battery_wake)}) · sueño ${v(n.sleep_score.value)} (${dd(n.sleep_score)}) · horas dormidas ${hhmm(n.sleep_minutes.value) || '—'} (${dd(n.sleep_minutes)}) · estrés ${v(n.stress_avg.value)} (${dd(n.stress_avg)}) · pulso en reposo ${v(n.resting_hr.value)} (${dd(n.resting_hr)}) · VFC ${v(n.hrv_last_night_ms.value, ' ms')} (${dd(n.hrv_last_night_ms)})`);
 
+  if (ctx.efforts?.length) {
+    lines.push(`\nESFUERZO PERCIBIDO DESPUÉS DE ENTRENAR (1-10, lo responde él): ${ctx.efforts.map(e => `${dayName(e.date)} ${e.date}: ${e.training_rpe}`).join(' · ')}`);
+  }
   lines.push(`\nCARGA DE ENTRENAMIENTO (calculada por ANATA con la carga de cada actividad): carga aguda 7 días ${v(today?.acute_load ?? yesterday?.acute_load)} · ratio aguda/crónica ${v(today?.load_ratio)}`);
 
   lines.push(`\nÚLTIMOS 14 DÍAS (fecha | batería despertar | sueño | horas | estrés | pulso reposo | VFC ms | carga del día | entrenamientos):`);
