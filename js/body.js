@@ -1,221 +1,165 @@
+// ANATA · Pantalla Cuerpo (Fase 3)
+// Una tarjeta por métrica: nombre simple, nombre Garmin pequeño, número grande,
+// una línea de traducción, mini línea de 7 días e insignia "calibrando".
+// Al tocarla se abre la explicación del traductor. Abajo, las molestias activas.
 import { supabaseClient } from './supabase.js';
 import { state } from './state.js';
+import { escapeHtml, localDate, addDays } from './utils.js';
+import { METRICS, MUTED, calibrationBadge } from './metrics.js';
+import { fetchToday } from './today.js';
 
-function stripMarkdown(text) {
-  if (!text) return '';
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '$1')
-    .replace(/\*(.*?)\*/g, '$1')
-    .replace(/#{1,6}\s/g, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+const isNum = v => typeof v === 'number' && Number.isFinite(v);
+
+// Mini línea de 7 días (SVG en salvia). Los días sin dato quedan como hueco.
+function sparkline(values) {
+  const W = 120, H = 36, P = 3;
+  const nums = values.filter(isNum);
+  if (nums.length < 2) return `<svg class="spark" viewBox="0 0 ${W} ${H}" aria-hidden="true"></svg>`;
+  const lastI = values.map(isNum).lastIndexOf(true);
+  const min = Math.min(...nums), max = Math.max(...nums);
+  const span = max - min || 1;
+  const x = i => P + (i * (W - 2 * P)) / (values.length - 1);
+  const y = v => H - P - ((v - min) / span) * (H - 2 * P);
+  let d = '', pen = false;
+  values.forEach((v, i) => {
+    if (!isNum(v)) { pen = false; return; }
+    d += `${pen ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)} `;
+    pen = true;
+  });
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+    <path d="${d.trim()}" fill="none" stroke="var(--anata-sage)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    ${values.map((v, i) => (isNum(v) && i !== lastI ? `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="1.8" fill="var(--anata-sage)"/>` : '')).join('')}
+    <circle cx="${x(lastI).toFixed(1)}" cy="${y(values[lastI]).toFixed(1)}" r="2.5" fill="var(--anata-dark)"/>
+  </svg>`;
 }
 
-function escapeHtml(str) {
-  if (typeof str !== 'string') return '';
-  return str.replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+function last7Values(data, col, useYesterday) {
+  const end = useYesterday ? addDays(data.date, -1) : data.date;
+  const byDate = Object.fromEntries((data.last7 || []).map(r => [r.date, r]));
+  return Array.from({ length: 7 }, (_, i) => byDate[addDays(end, i - 6)]?.[col] ?? null);
 }
 
-// Mapa status -> display (label + color), según brief Sesión 06.
-function statusDisplay(status) {
-  if (status === 'go') return { label: 'Listo', color: '#5a9e3a' };
-  if (status === 'caution') return { label: 'Precaución', color: '#c49b20' };
-  if (status === 'stop') return { label: 'Descanso', color: '#c0392b' };
-  return { label: 'Sin datos', color: '#B0B0B0' };
+function metricCard(m, data) {
+  const row = m.useYesterday ? (data.last7 || []).find(r => r.date === addDays(data.date, -1)) : data.today;
+  const value = row?.[m.col] ?? null;
+  const normal = data.averages_7d?.[m.col] ?? null;
+  const badge = m.calibKey ? calibrationBadge(data.calibration, m.calibKey) : null;
+  const card = document.createElement('article');
+  card.className = 'card metric-card';
+  card.innerHTML = `
+    <button class="metric-head" aria-expanded="false">
+      <div class="metric-names">
+        <span class="metric-name">${m.name}</span>
+        <span class="metric-garmin" data-small-ok>${m.garmin}</span>
+      </div>
+      <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="metric-row">
+      <span class="big-number">${m.format(value)}${isNum(value) && m.unit ? `<span class="big-unit">${m.unit}</span>` : ''}</span>
+      ${sparkline(last7Values(data, m.col, m.useYesterday))}
+    </div>
+    <p class="metric-line">${escapeHtml(m.line(value, normal, row))}</p>
+    ${badge ? `<span class="badge-calib" data-small-ok>${escapeHtml(badge)}</span>` : ''}
+    <div class="metric-explain" hidden>
+      <p><strong>Qué es.</strong> ${escapeHtml(m.what)}</p>
+      <p><strong>Rangos.</strong> ${escapeHtml(m.ranges)}</p>
+      <p><strong>Cómo leerlo.</strong> ${escapeHtml(m.read)}</p>
+    </div>`;
+  const head = card.querySelector('.metric-head');
+  const explain = card.querySelector('.metric-explain');
+  const toggle = () => {
+    const open = explain.hidden;
+    explain.hidden = !open;
+    head.setAttribute('aria-expanded', String(open));
+    card.classList.toggle('open', open);
+  };
+  head.addEventListener('click', toggle);
+  card.querySelector('.metric-row').addEventListener('click', toggle);
+  return card;
 }
 
-function statusDotClass(status) {
-  if (status === 'go') return 'dot-verde';
-  if (status === 'caution') return 'dot-ambar';
-  if (status === 'stop') return 'dot-rojo';
-  return 'dot-empty';
+function mutedCard(m) {
+  const card = document.createElement('article');
+  card.className = 'card metric-card muted';
+  card.innerHTML = `
+    <div class="metric-names">
+      <span class="metric-name">${m.name}</span>
+      <span class="metric-garmin" data-small-ok>${m.garmin}</span>
+    </div>
+    <p class="metric-line">${escapeHtml(m.note)}</p>`;
+  return card;
 }
 
-// Diferencia en días calendario respecto de hoy.
-function daysAgo(dateStr) {
-  const d = new Date(dateStr); d.setHours(0, 0, 0, 0);
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  return Math.round((today - d) / 86400000);
-}
-
-// Fecha relativa: Hoy / Ayer / hace N días.
-function relDate(dateStr) {
-  const n = daysAgo(dateStr);
-  if (n <= 0) return 'Hoy';
-  if (n === 1) return 'Ayer';
+function relDay(iso) {
+  const d = localDate(new Date(iso));
+  const today = localDate();
+  if (d === today) return 'hoy';
+  if (d === addDays(today, -1)) return 'ayer';
+  const n = Math.round((Date.parse(today) - Date.parse(d)) / 86400000);
   return `hace ${n} días`;
 }
 
-// 7 dots L·M·X·J·V·S·D, de lunes a domingo de la semana actual.
-// Agrupa por día y, si hay varios veredictos en un día, usa el último.
-function getWeekDots(verdicts) {
-  const DAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-  const today = new Date();
-  const dow = today.getDay();
-  const mondayOffset = dow === 0 ? 6 : dow - 1;
-
-  return DAYS.map((label, i) => {
-    const d = new Date(today);
-    d.setDate(today.getDate() - mondayOffset + i);
-    d.setHours(0, 0, 0, 0);
-    const end = new Date(d); end.setHours(23, 59, 59, 999);
-    // verdicts viene ordenado desc; el primero que matchee es el último del día.
-    const verdict = verdicts.find(v => {
-      const t = new Date(v.created_at);
-      return t >= d && t <= end;
-    });
-    return { label, verdict, isToday: i === mondayOffset };
-  });
-}
-
-function renderSkeleton(container) {
-  container.innerHTML = `
-    <div class="body-skeleton" style="height:84px;"></div>
-    <div class="body-skeleton" style="height:64px;"></div>
-    <div class="body-skeleton" style="height:120px;"></div>`;
+async function achesSection() {
+  const wrap = document.createElement('section');
+  wrap.className = 'aches';
+  wrap.innerHTML = `<h2 class="section-title">Tus molestias</h2>`;
+  const since = new Date(Date.now() - 30 * 86400000).toISOString();
+  const { data, error } = await supabaseClient.from('aches')
+    .select('body_zone, intensity, description, reported_at')
+    .eq('user_id', state.currentUser.id).gte('reported_at', since)
+    .order('reported_at', { ascending: false }).limit(10);
+  if (error || !data?.length) {
+    wrap.insertAdjacentHTML('beforeend', `<p class="card-text muted-text">Sin molestias en los últimos 30 días.</p>`);
+    return wrap;
+  }
+  // Una línea por zona (la más reciente), con cuántas veces apareció.
+  const byZone = new Map();
+  for (const a of data) {
+    const k = (a.body_zone || '').toLowerCase();
+    if (!byZone.has(k)) byZone.set(k, { ...a, count: 0 });
+    byZone.get(k).count++;
+  }
+  const list = document.createElement('div');
+  list.className = 'card ache-list';
+  list.innerHTML = [...byZone.values()].map(a => {
+    const high = isNum(a.intensity) && a.intensity >= 7;
+    return `
+      <div class="ache-row">
+        <span class="ache-dot ${high ? 'high' : ''}"></span>
+        <div class="ache-text">
+          <span class="ache-zone">${escapeHtml(a.body_zone.charAt(0).toUpperCase() + a.body_zone.slice(1))}${isNum(a.intensity) ? ` · ${a.intensity}/10` : ''}</span>
+          <span class="ache-meta">${relDay(a.reported_at)}${a.count > 1 ? ` · ${a.count} veces en 30 días` : ''}</span>
+          ${high ? `<span class="ache-warn">Esa molestia no es normal. Ve al kinesiólogo antes de seguir.</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+  wrap.appendChild(list);
+  return wrap;
 }
 
 export async function loadCuerpo() {
   const container = document.getElementById('body-content');
   if (!container || !state.currentUser) return;
+  container.innerHTML = `<div class="card card-skeleton"></div><div class="card card-skeleton"></div>`;
 
-  renderSkeleton(container);
-
-  const userId = state.currentUser.id;
-
+  let data = state.today;
   try {
-    // QUERY 1+2: veredictos (último estado + dots de la semana).
-    // QUERY 3: molestias.
-    const [vRes, aRes] = await Promise.all([
-      supabaseClient
-        .from('verdicts')
-        .select('id, raw_json, recommendation, load_level, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(50),
-      supabaseClient
-        .from('aches')
-        .select('body_zone, intensity, description, reported_at')
-        .eq('user_id', userId)
-        .order('reported_at', { ascending: false })
-        .limit(10)
-    ]);
-
-    if (vRes.error) throw vRes.error;
-    if (aRes.error) throw aRes.error;
-
-    const verdicts = vRes.data || [];
-    const aches = aRes.data || [];
-    const latest = verdicts[0] || null;
-
-    // QUERY 4: patrón crítico (tabla puede no existir aún -> no debe romper).
-    let pattern = null;
-    try {
-      const pRes = await supabaseClient
-        .from('patterns')
-        .select('description, confidence, occurrences')
-        .eq('user_id', userId)
-        .eq('is_active', true)
-        .in('confidence', ['medium', 'high'])
-        .order('occurrences', { ascending: false })
-        .limit(1);
-      if (!pRes.error && pRes.data && pRes.data.length) pattern = pRes.data[0];
-    } catch (e) {
-      // patterns no disponible — se ignora silenciosamente.
-    }
-
-    let html = '';
-
-    // ── Card estado actual ──
-    if (latest) {
-      const status = latest.raw_json?.status || null;
-      const { label, color } = statusDisplay(status);
-      const fullText = stripMarkdown(latest.raw_json?.reasoning || latest.recommendation || '');
-      const desc = fullText.length > 80 ? fullText.slice(0, 80).trim() + '…' : fullText;
-      html += `
-        <div class="body-card">
-          <div class="body-card-row">
-            <div class="body-status-orb" style="background:${color}22;border:2px solid ${color};">
-              <div style="width:16px;height:16px;border-radius:50%;background:${color};"></div>
-            </div>
-            <div style="flex:1;min-width:0;">
-              <div class="section-head" style="margin:0 0 4px;padding:0;">Estado actual</div>
-              <div class="body-status-label">${escapeHtml(label)}</div>
-              ${desc ? `<div class="body-status-desc">${escapeHtml(desc)}</div>` : ''}
-            </div>
-            <div style="font-size:9px;color:var(--anata-gray);flex-shrink:0;padding-left:8px;">${relDate(latest.created_at)}</div>
-          </div>
-        </div>`;
-    } else {
-      // Usuario nuevo sin check-ins.
-      html += `
-        <div class="body-card">
-          <div class="body-card-row">
-            <div class="body-status-orb" style="background:#B0B0B022;border:2px solid #B0B0B0;">
-              <div style="width:16px;height:16px;border-radius:50%;background:#B0B0B0;"></div>
-            </div>
-            <div style="flex:1;min-width:0;">
-              <div class="section-head" style="margin:0 0 4px;padding:0;">Estado actual</div>
-              <div class="body-status-label">Sin check-ins aún</div>
-            </div>
-          </div>
-        </div>`;
-    }
-
-    // ── Banner de patrón crítico (arriba de los dots) ──
-    if (pattern && pattern.description) {
-      html += `<div class="pattern-banner">${escapeHtml(stripMarkdown(pattern.description))}</div>`;
-    }
-
-    // ── Dots de la semana ──
-    const weekDots = getWeekDots(verdicts);
-    html += `<div class="body-week">`;
-    for (const day of weekDots) {
-      const cls = day.verdict ? statusDotClass(day.verdict.raw_json?.status) : 'dot-empty';
-      html += `
-        <div class="body-day-item">
-          <div class="body-day-dot ${cls}${day.isToday ? ' dot-today' : ''}"></div>
-          <span class="body-day-label">${day.label}</span>
-        </div>`;
-    }
-    html += `</div>`;
-
-    // ── Molestias ──
-    html += `<div class="section-head">Molestias</div>`;
-    if (aches.length > 0) {
-      // Activa: reported_at en los últimos 14 días. Activas primero, resueltas al final.
-      const decorated = aches.map(a => ({ ...a, _active: daysAgo(a.reported_at) <= 14 }));
-      decorated.sort((x, y) => (x._active === y._active ? 0 : x._active ? -1 : 1));
-
-      for (const a of decorated) {
-        const dotColor = a._active ? '#c49b20' : '#B0B0B0';
-        const badge = a._active ? 'Activa' : 'Resuelta';
-        const n = daysAgo(a.reported_at);
-        const when = n <= 0 ? 'Hoy' : n === 1 ? 'Hace 1 día' : `Hace ${n} días`;
-        const meta = a.intensity ? `${when} · intensidad ${a.intensity}/10` : when;
-        html += `
-          <div class="ache-item${a._active ? '' : ' resolved'}">
-            <div class="ache-dot" style="background:${dotColor};"></div>
-            <div class="ache-info">
-              <div class="ache-zone">${escapeHtml(a.body_zone || '—')}</div>
-              <div class="ache-meta">${escapeHtml(meta)}</div>
-            </div>
-            <div class="ache-badge">${badge}</div>
-          </div>`;
-      }
-    } else {
-      html += `
-        <div class="empty-state" style="padding:24px 20px;">
-          <p>Sin molestias registradas.</p>
-          <p>Cuéntale a ANATA si algo molesta.</p>
-        </div>`;
-    }
-
-    container.innerHTML = html;
-  } catch (err) {
-    const c = document.getElementById('body-content');
-    if (c) c.innerHTML = `<p class="screen-error">Error al cargar datos: ${escapeHtml(err.message || String(err))}</p>`;
+    if (!data || data.date !== localDate()) data = await fetchToday();
+  } catch (e) {
+    container.innerHTML = `<article class="card"><h2 class="card-title">No pude cargar tus métricas</h2><p class="card-text">Revisa tu conexión e inténtalo de nuevo.</p></article>`;
+    return;
   }
-}
 
-export function initBody() {}
+  container.innerHTML = '';
+  const intro = document.createElement('p');
+  intro.className = 'screen-intro';
+  const nd = data.calibration?.details?.normal_7d;
+  intro.textContent = nd
+    ? `Comparo cada número con tu normal. Todavía lo estoy aprendiendo: día ${nd.day} de 7. Toca una métrica para entenderla.`
+    : 'Comparo cada número con tu normal de los últimos 7 días. Toca una métrica para entenderla.';
+  container.appendChild(intro);
+
+  for (const m of METRICS) container.appendChild(metricCard(m, data));
+  for (const m of MUTED) container.appendChild(mutedCard(m));
+  container.appendChild(await achesSection());
+}

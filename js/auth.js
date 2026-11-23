@@ -57,7 +57,7 @@ export async function signInWithGoogle() {
 export async function signInWithEmail() {
   const email = document.getElementById('emailInput').value.trim();
   const password = document.getElementById('passwordInput').value;
-  if (!email || !password) { loginError.textContent = 'Completá email y contraseña'; return; }
+  if (!email || !password) { loginError.textContent = 'Completa email y contraseña'; return; }
   if (password.length < 6) { loginError.textContent = 'La contraseña debe tener al menos 6 caracteres'; return; }
   loginError.textContent = '';
   showLoginLoading();
@@ -85,6 +85,7 @@ export async function signInWithEmail() {
 export async function signOut() {
   if (!confirm('¿Cerrar sesión?')) return;
   await supabaseClient.auth.signOut();
+  enteredFor = null;
   state.currentUser = null;
   state.currentProfile = null;
   state.currentConversationId = null;
@@ -93,7 +94,13 @@ export async function signOut() {
   showLoginScreen();
 }
 
+// Supabase dispara SIGNED_IN también al recargar con sesión guardada, además de
+// checkAuthState(). Sin esta guarda la app entraba dos veces y duplicaba el chat.
+let enteredFor = null;
+
 async function onUserAuthenticated() {
+  if (enteredFor === state.currentUser?.id) return;
+  enteredFor = state.currentUser?.id || null;
   loginScreen.classList.add('hidden');
 
   try {
@@ -135,6 +142,7 @@ supabaseClient.auth.onAuthStateChange(async (event, session) => {
     state.currentUser = session.user;
     await onUserAuthenticated();
   } else if (event === 'SIGNED_OUT') {
+    enteredFor = null;
     state.currentUser = null;
     state.currentProfile = null;
     showLoginScreen();

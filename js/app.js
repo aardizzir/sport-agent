@@ -11,10 +11,13 @@ function updateAppHeight() {
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', () => {
     updateAppHeight();
-    requestAnimationFrame(() => {
-      const conv = document.getElementById('conversation');
-      if (conv) conv.scrollTop = conv.scrollHeight;
-    });
+    // Solo bajar al final del chat si el usuario está escribiendo.
+    if (document.activeElement === document.getElementById('inputField')) {
+      requestAnimationFrame(() => {
+        const scroller = document.getElementById('hoy-scroll');
+        if (scroller) scroller.scrollTop = scroller.scrollHeight;
+      });
+    }
   });
 }
 window.addEventListener('resize', updateAppHeight);
@@ -23,12 +26,12 @@ updateAppHeight();
 
 const input = document.getElementById('inputField');
 const sendBtn = document.getElementById('sendBtn');
-const conversation = document.getElementById('conversation');
+const hoyScroll = document.getElementById('hoy-scroll');
 
 input.addEventListener('focus', () => {
   setTimeout(() => {
     updateAppHeight();
-    conversation.scrollTop = conversation.scrollHeight;
+    hoyScroll.scrollTop = hoyScroll.scrollHeight;
   }, 300);
 });
 

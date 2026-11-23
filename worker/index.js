@@ -19,6 +19,7 @@
 import { handleChat } from './chat.js';
 import { fetchGarminDays, presenceReport, localDate, localHour, addDays, TZ } from './garmin.js';
 import { generateDailySummary } from './summary.js';
+import { computeCalibration } from './context.js';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -144,7 +145,7 @@ async function handleToday(request, env) {
   // RLS de Supabase filtra por el usuario del JWT.
   const [rowsRes, countRes, lastRunRes, summaryRes] = await Promise.all([
     fetch(`${env.SUPABASE_URL}/rest/v1/garmin_daily?select=${cols}&date=gte.${from}&date=lte.${today}&order=date.desc`, { headers }),
-    fetch(`${env.SUPABASE_URL}/rest/v1/garmin_daily?select=date,sleep_score,acute_load&order=date.asc`, { headers }),
+    fetch(`${env.SUPABASE_URL}/rest/v1/garmin_daily?select=date,sleep_score,hrv_last_night_ms,acute_load&date=lte.${today}&order=date.asc`, { headers }),
     fetch(`${env.SUPABASE_URL}/rest/v1/garmin_sync_runs?select=ran_at,ok,trigger,missing_metrics,error&order=ran_at.desc&limit=1`, { headers }),
     fetch(`${env.SUPABASE_URL}/rest/v1/daily_summaries?select=date,headline,lines,summary_text,color,calibrating_metrics,flags,status,verdict_id,created_at&date=eq.${today}`, { headers }),
   ]);
@@ -166,6 +167,10 @@ async function handleToday(request, env) {
     today: todayRow,
     has_data_today: !!todayRow,
     averages_7d: averages(previous7),
+    // Últimos 7 días (incluye hoy) en orden cronológico: para las mini líneas de Cuerpo.
+    last7: rows.filter(r => r.date >= addDays(today, -6)).sort((a, b) => a.date.localeCompare(b.date)),
+    // Misma lógica que usa el agente (context.js): qué calibra y cuánto falta.
+    calibration: computeCalibration({ asOf: today, today: todayRow, garmin14: [...rows].sort((a, b) => a.date.localeCompare(b.date)), garminAll: all }),
     days_in_window: previous7.length,
     history: {
       days_with_data: all.length,

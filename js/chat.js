@@ -1,7 +1,8 @@
 import { supabaseClient, WORKER_URL } from './supabase.js';
 import { state } from './state.js';
-import { getTime, formatText, escapeHtml, scrollToBottom } from './utils.js';
+import { getTime, formatText, escapeHtml, scrollToBottom, scrollState, localDate } from './utils.js';
 import { renderVerdictCardC2 } from './verdict.js';
+import { loadTodayPanel, renderDecision, linkVerdictToSummary } from './today.js';
 
 const conversation = document.getElementById('conversation');
 const avatar = document.getElementById('avatar');
@@ -11,7 +12,16 @@ const sendBtn = document.getElementById('sendBtn');
 const input = document.getElementById('inputField');
 
 export function clearConversationUI() {
-  conversation.innerHTML = '<div class="day-marker">Hoy</div>';
+  conversation.innerHTML = '';
+}
+
+// Nota en el chat cuando la decisión se muestra en su tarjeta (arriba).
+function renderDecisionNote() {
+  const msg = document.createElement('div');
+  msg.className = 'msg msg-agent msg-note';
+  msg.innerHTML = `<button class="decision-note" type="button">Tu decisión de hoy quedó arriba ↑</button>`;
+  msg.querySelector('button').onclick = () => document.getElementById('decision-slot')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  conversation.appendChild(msg);
 }
 
 export function setAgentState(agentState) {
@@ -103,7 +113,12 @@ export function processCompleteResponse(fullText, agentBubble) {
         agentBubble.container.remove();
       }
       agentBubble.cursor.remove();
-      renderVerdictCardC2(verdictData);
+      if (state.viewingHistorical) {
+        renderVerdictCardC2(verdictData);
+      } else {
+        renderDecision(verdictData);
+        renderDecisionNote();
+      }
       if (afterText) {
         const afterBubble = createAgentBubble();
         afterBubble.content.innerHTML = formatText(afterText);
@@ -208,6 +223,8 @@ export async function loadConversation(conversationId, isHistorical = false) {
 
   state.viewingHistorical = true;
   clearConversationUI();
+  document.getElementById('today-panel')?.classList.add('hidden');
+  document.getElementById('chat-head')?.classList.add('hidden');
 
   const { data, error } = await supabaseClient
     .from('messages')
@@ -241,7 +258,9 @@ export async function returnToToday() {
   if (banner) banner.remove();
   state.viewingHistorical = false;
   input.disabled = false;
-  input.placeholder = 'Escribí tu mensaje...';
+  input.placeholder = 'Escribe tu mensaje...';
+  document.getElementById('today-panel')?.classList.remove('hidden');
+  document.getElementById('chat-head')?.classList.remove('hidden');
   clearConversationUI();
   if (state.currentConversationId) {
     await loadMessages(state.currentConversationId);
@@ -366,15 +385,16 @@ export async function callAgent(userMessage) {
         const verdictMatch = fullText.match(/<<<VERDICT\s*([\s\S]+?)\s*VERDICT>>>/);
         if (verdictMatch) {
           const verdictData = JSON.parse(verdictMatch[1]);
-          const { error: verdictError } = await supabaseClient.from('verdicts').insert({
+          const { data: savedVerdict, error: verdictError } = await supabaseClient.from('verdicts').insert({
             user_id: state.currentUser.id,
             conversation_id: state.currentConversationId,
             recommendation: verdictData.reasoning ?? null,
             load_level: verdictData.label ?? null,
             rest_days: verdictData.rest_days ?? 0,
             raw_json: verdictData,
-          });
+          }).select('id').single();
           if (verdictError) console.error('Error saving verdict to DB:', verdictError);
+          else linkVerdictToSummary(savedVerdict?.id);
         }
       } catch (e) {
         console.error('Verdict parse/save error:', e);
@@ -427,26 +447,28 @@ export function setupUserHeader() {
   headerName.textContent = displayName;
 }
 
+// Una conversación por día (hora de Santiago): Hoy muestra solo el chat de hoy
+// y el Historial agrupa por día. Ya no hay saludo automático: la tarjeta
+// "Tu cuerpo hoy" y el check-in de 1 toque abren el día.
 export async function loadOrCreateConversation() {
   try {
     const { data: conversations, error } = await supabaseClient
       .from('conversations')
-      .select('id')
+      .select('*')
       .eq('user_id', state.currentUser.id)
       .order('updated_at', { ascending: false })
       .limit(1);
 
     if (error) throw error;
 
-    if (conversations && conversations.length > 0) {
-      state.currentConversationId = conversations[0].id;
+    const latest = conversations && conversations[0];
+    const started = latest && (latest.created_at || latest.updated_at);
+    if (started && localDate(new Date(started)) === localDate()) {
+      state.currentConversationId = latest.id;
       await loadMessages(state.currentConversationId);
-      if (state.messageHistory.length === 0) {
-        setTimeout(() => triggerFirstMessage(), 400);
-      }
     } else {
       await createNewConversation();
-      setTimeout(() => triggerFirstMessage(), 400);
+      state.messageHistory = [];
     }
   } catch (error) {
     console.error('Error loading conversation:', error);
@@ -463,23 +485,35 @@ export async function enterChatApp(justFinishedOnboarding = false) {
 
   setupUserHeader();
 
+  scrollState.suppress = true;
+  const panelReady = loadTodayPanel();
   if (justFinishedOnboarding) {
     await createNewConversation();
     setTimeout(() => triggerFirstMessage(), 600);
   } else {
     await loadOrCreateConversation();
   }
+  await panelReady;
+  // Los mensajes de hoy pueden traer el veredicto: la tarjeta de decisión manda.
+  document.getElementById('hoy-scroll')?.scrollTo({ top: 0 });
+  scrollState.suppress = false;
 }
 
+// El check-in de 1 toque (today.js) envía su mensaje por aquí.
+window.__sendToAgent = async (text) => {
+  renderUserMessage(text);
+  await callAgent(text);
+};
+
 export async function resetChat() {
-  if (!confirm('¿Reiniciar conversación? Empezás una nueva (la anterior queda guardada).')) return;
+  if (!confirm('¿Reiniciar conversación? Empiezas una nueva (la anterior queda guardada).')) return;
   try {
     await createNewConversation();
   } catch (error) {
     console.error('Error creating new conversation:', error);
   }
   state.messageHistory = [];
-  conversation.innerHTML = '<div class="day-marker">Hoy</div>';
+  conversation.innerHTML = '';
   setTimeout(() => {
     callAgent('[SISTEMA: El usuario reinició la conversación. Saluda brevemente variando la apertura y haz tu primera pregunta del check-in.]');
   }, 300);

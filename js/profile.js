@@ -1,5 +1,6 @@
 import { supabaseClient } from './supabase.js';
 import { state } from './state.js';
+import { longDate } from './utils.js';
 
 // ── Configuración de campos editables ──
 // raw = valor crudo para el input; format() = cómo se muestra en modo lectura;
@@ -80,6 +81,26 @@ function editRowHTML(field) {
     <div class="field-error" data-error-for="${field.key}"></div>`;
 }
 
+// Estado de la conexión con Garmin (desde GET /today, ya cargado en Hoy).
+function garminSection() {
+  const d = state.today;
+  const run = d?.last_sync;
+  let status = 'Sin información todavía.';
+  if (run) {
+    const when = new Date(run.ran_at).toLocaleString('es-CL', { timeZone: 'America/Santiago', weekday: 'long', hour: '2-digit', minute: '2-digit', hour12: false });
+    status = run.ok ? `Conectada. Última lectura: ${when}.` : `La última lectura falló (${when}). Reviso de nuevo en la próxima hora programada.`;
+  }
+  const days = d?.history?.days_with_data;
+  return `
+      <div class="section-head">Tu banda Garmin</div>
+      <div class="profile-section">
+        <div class="field-row"><span class="field-value">${status}</span></div>
+        ${typeof days === 'number' ? `<div class="field-row"><span class="field-value">${days} ${days === 1 ? 'día' : 'días'} con datos desde el ${d.history.first_date ? longDate(d.history.first_date) : '—'}.</span></div>` : ''}
+        <div class="field-row"><span class="field-value">Leo tus datos cada mañana a las 6:30 y de nuevo a las 9:30.</span></div>
+        <div class="field-row"><button class="btn-secondary" disabled>Subir una captura (muy pronto)</button></div>
+      </div>`;
+}
+
 export async function loadProfile() {
   const container = document.getElementById('profile-content');
   if (!container || !state.currentUser) return;
@@ -113,6 +134,13 @@ export async function loadProfile() {
         <div class="profile-email">${email}</div>
       </div>
 
+      <div class="section-head">Tu objetivo</div>
+      <div class="profile-section">
+        <div class="field-row"><span class="field-value">Gimnasio hoy, volver a jugar rugby</span></div>
+      </div>
+
+      ${garminSection()}
+
       <div class="section-head">Mis datos</div>
       <div class="profile-section">
         ${fields.map(f => `
@@ -138,12 +166,12 @@ export async function loadProfile() {
       <div class="section-head">Instalar ANATA</div>
       <div class="profile-section">
         <div class="install-block">
-          <p class="install-copy">Para una mejor experiencia, agregá ANATA a tu pantalla de inicio.</p>
+          <p class="install-copy">Para una mejor experiencia, agrega ANATA a tu pantalla de inicio.</p>
           <button class="install-instructions-btn" id="installInstructionsBtn">Ver instrucciones</button>
         </div>
         <div class="install-instructions hidden" id="installInstructions">
-          <div class="install-step"><strong>En iPhone (Safari):</strong> tocá el ícono de compartir <span class="install-glyph">⬆</span> y elegí <em>"Agregar a pantalla de inicio"</em>.</div>
-          <div class="install-step"><strong>En Android (Chrome):</strong> abrí el menú <span class="install-glyph">⋮</span> y elegí <em>"Instalar app"</em>.</div>
+          <div class="install-step"><strong>En iPhone (Safari):</strong> toca el ícono de compartir <span class="install-glyph">⬆</span> y elige <em>"Agregar a pantalla de inicio"</em>.</div>
+          <div class="install-step"><strong>En Android (Chrome):</strong> abre el menú <span class="install-glyph">⋮</span> y elige <em>"Instalar app"</em>.</div>
         </div>
       </div>`;
 
