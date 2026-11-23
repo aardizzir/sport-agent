@@ -1,15 +1,16 @@
 /**
- * ANATA · Cloudflare Worker `sport-agent-api` (v0.7.0 · Fase 1 ANATA Personal)
+ * ANATA · Cloudflare Worker `sport-agent-api` (v0.8.0 · Fase 2 ANATA Personal)
  *
  * Rutas:
  *   POST /  o  POST /chat        → chat con ANATA (igual que antes, ver chat.js)
- *   GET  /today                  → fila de hoy de garmin_daily + promedios de 7 días
+ *   GET  /today                  → fila de hoy de garmin_daily + promedios de 7 días + resumen del día
  *                                  (requiere el JWT de Supabase del usuario)
  *   POST /admin/garmin/sync      → trae N días de Garmin y hace upsert (?days=3)
  *                                  devuelve qué métricas llegaron. Header X-Admin-Token.
  *   GET  /admin/garmin/raw       → respuesta cruda guardada de un día (?date=YYYY-MM-DD)
+ *   POST /admin/summary          → genera "Tu cuerpo hoy" (?date=&force=1&save=0)
  *   GET  /admin/profiles         → lista perfiles (para configurar ANATA_USER_ID)
- *   scheduled (cron)             → 06:30 y 09:30 hora de Santiago: trae ayer y hoy
+ *   scheduled (cron)             → 06:30 y 09:30 hora de Santiago: trae ayer y hoy y genera el resumen
  *
  * Secretos (nunca en el código; se cargan en Cloudflare):
  *   ANTHROPIC_API_KEY, GARMIN_PERSONAL_API_KEY, SUPABASE_SERVICE_ROLE_KEY, ANATA_ADMIN_TOKEN
@@ -17,6 +18,7 @@
  */
 import { handleChat } from './chat.js';
 import { fetchGarminDays, presenceReport, localDate, localHour, addDays, TZ } from './garmin.js';
+import { generateDailySummary } from './summary.js';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -140,10 +142,11 @@ async function handleToday(request, env) {
   const cols = 'date,body_battery_wake,body_battery_min,body_battery_max,body_battery_sleep_charge,sleep_score,sleep_quality,sleep_minutes,stress_avg,resting_hr,resting_hr_7d_avg,hrv_last_night_ms,hrv_weekly_avg_ms,hrv_status,training_readiness,training_load,acute_load,load_ratio,vo2max,spo2_avg,steps,source,fetched_at';
 
   // RLS de Supabase filtra por el usuario del JWT.
-  const [rowsRes, countRes, lastRunRes] = await Promise.all([
+  const [rowsRes, countRes, lastRunRes, summaryRes] = await Promise.all([
     fetch(`${env.SUPABASE_URL}/rest/v1/garmin_daily?select=${cols}&date=gte.${from}&date=lte.${today}&order=date.desc`, { headers }),
     fetch(`${env.SUPABASE_URL}/rest/v1/garmin_daily?select=date,sleep_score,acute_load&order=date.asc`, { headers }),
     fetch(`${env.SUPABASE_URL}/rest/v1/garmin_sync_runs?select=ran_at,ok,trigger,missing_metrics,error&order=ran_at.desc&limit=1`, { headers }),
+    fetch(`${env.SUPABASE_URL}/rest/v1/daily_summaries?select=date,headline,lines,summary_text,color,calibrating_metrics,flags,status,verdict_id,created_at&date=eq.${today}`, { headers }),
   ]);
   if (rowsRes.status === 401) return json({ error: 'Sesión inválida o vencida' }, 401);
   if (!rowsRes.ok) return json({ error: 'Error leyendo garmin_daily', detail: await rowsRes.text() }, 500);
@@ -151,6 +154,7 @@ async function handleToday(request, env) {
   const rows = await rowsRes.json();
   const all = countRes.ok ? await countRes.json() : [];
   const lastRun = lastRunRes.ok ? (await lastRunRes.json())[0] || null : null;
+  const summary = summaryRes.ok ? (await summaryRes.json())[0] || null : null;
 
   const todayRow = rows.find(r => r.date === today) || null;
   const previous7 = rows.filter(r => r.date < today); // "tu normal": los 7 días anteriores a hoy
@@ -158,6 +162,7 @@ async function handleToday(request, env) {
   return json({
     date: today,
     timezone: TZ,
+    summary,
     today: todayRow,
     has_data_today: !!todayRow,
     averages_7d: averages(previous7),
@@ -195,6 +200,19 @@ async function handleAdmin(request, env, path) {
     return json(await res.json(), res.status);
   }
 
+  if (path === '/admin/summary' && request.method === 'POST') {
+    const date = url.searchParams.get('date') || localDate();
+    try {
+      const result = await generateDailySummary(env, date, {
+        force: url.searchParams.get('force') === '1',
+        save: url.searchParams.get('save') !== '0',
+      });
+      return json(result);
+    } catch (e) {
+      return json({ ok: false, date, error: String(e.message || e) }, 502);
+    }
+  }
+
   if (path === '/admin/garmin/sync' && request.method === 'POST') {
     const days = Math.min(Math.max(parseInt(url.searchParams.get('days') || '2', 10) || 2, 1), 31);
     const end = url.searchParams.get('end') || localDate();
@@ -220,7 +238,7 @@ export default {
       }
       if (request.method === 'GET' && path === '/today') return await handleToday(request, env);
       if (path.startsWith('/admin/')) return await handleAdmin(request, env, path);
-      if (request.method === 'GET' && path === '/') return json({ ok: true, service: 'ANATA sport-agent-api', version: '0.7.0' });
+      if (request.method === 'GET' && path === '/') return json({ ok: true, service: 'ANATA sport-agent-api', version: '0.8.0' });
       return json({ error: 'Not found' }, 404);
     } catch (e) {
       console.error('Worker error:', e);
@@ -238,5 +256,13 @@ export default {
     const today = localDate(now);
     const result = await syncGarmin(env, [addDays(today, -1), today], `cron-${hour}h`);
     console.log('cron result:', JSON.stringify({ ok: result.ok, dates: result.dates, error: result.error }));
+
+    // "Tu cuerpo hoy": a las 06:30 siempre; a las 09:30 solo si los datos cambiaron.
+    try {
+      const summary = await generateDailySummary(env, today, { force: false });
+      console.log('daily_summary:', JSON.stringify({ date: today, skipped: !!summary.skipped, status: summary.status, color: summary.color }));
+    } catch (e) {
+      console.error('daily_summary error:', e);
+    }
   },
 };

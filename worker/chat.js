@@ -1,6 +1,7 @@
 /**
  * ANATA - lógica del chat (antes worker-v042.js, v0.6.0).
  * Desde la Fase 1 de ANATA Personal el router está en worker/index.js.
+ * Desde la Fase 2 el prompt vive en prompt.js y el contexto en context.js.
  * Cambios vs v0.5.0:
  * - Motor de detección de patrones longitudinales (detectAndUpdatePatterns)
  *   sobre las tablas aches y verdicts -> escribe/actualiza la tabla `patterns`.
@@ -20,9 +21,11 @@
  *             onboarding_completed
  */
 
-// Modelo de Claude. claude-sonnet-4-6 es el Sonnet más reciente disponible
-// al momento de esta sesión (junio 2026); no hay un Sonnet posterior estable.
-const MODEL = 'claude-sonnet-4-6';
+
+import { loadAnataContext, buildContextBlock } from './context.js';
+import { buildSystem } from './prompt.js';
+import { streamChat } from './claude.js';
+import { localDate } from './garmin.js';
 
 const DAY_NAMES = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
@@ -60,7 +63,7 @@ function normZone(zone) {
 // ─────────────────────────────────────────────────────────────
 // Contexto base: perfil + disciplinas + molestias recientes
 // ─────────────────────────────────────────────────────────────
-async function fetchUserContext(userId, headers, supabaseUrl) {
+export async function fetchUserContext(userId, headers, supabaseUrl) {
   const context = { profile: null, disciplines: [], aches: [] };
 
   await Promise.all([
@@ -89,7 +92,7 @@ async function fetchUserContext(userId, headers, supabaseUrl) {
 // Hace los reads, agrega en JS, computa los patrones y devuelve también
 // las filas a upsertear (que el caller escribe en background).
 // ─────────────────────────────────────────────────────────────
-async function detectAndUpdatePatterns(userId, headers, supabaseUrl, primaryDiscipline) {
+export async function detectAndUpdatePatterns(userId, headers, supabaseUrl, primaryDiscipline) {
   const result = {
     patterns: [],          // patrones activos (recién computados)
     recentSummary: [],     // últimos 7 días
@@ -206,7 +209,7 @@ async function detectAndUpdatePatterns(userId, headers, supabaseUrl, primaryDisc
 }
 
 // Escribe los patrones detectados (upsert idempotente por user_id+type+pattern_key).
-async function persistPatterns(upserts, headers, supabaseUrl) {
+export async function persistPatterns(upserts, headers, supabaseUrl) {
   if (!upserts || upserts.length === 0) return;
   try {
     // No mandamos first_seen/created_at: en update se preservan los existentes.
@@ -225,7 +228,7 @@ async function persistPatterns(upserts, headers, supabaseUrl) {
 // ─────────────────────────────────────────────────────────────
 // TAREA 3 · Contexto enriquecido (bloque de memoria)
 // ─────────────────────────────────────────────────────────────
-function buildMemoryContext(context, patternsResult) {
+export function buildMemoryContext(context, patternsResult) {
   const profile = context.profile || {};
   const userName = profile.name || 'el usuario';
 
@@ -309,226 +312,51 @@ Historial: Es su primera semana usando ANATA. Sin patrones detectados aún.`;
 }
 
 // ─────────────────────────────────────────────────────────────
-// TAREA 4 · System prompt v2.0
-// ─────────────────────────────────────────────────────────────
-function buildSystemPrompt(memoryBlock, disciplineNames) {
-  const now = new Date();
-  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const diaSemana = DAY_NAMES[now.getDay()];
-  const dia = now.getDate();
-  const mes = meses[now.getMonth()];
-  const anio = now.getFullYear();
-  const hora = now.getHours();
-  const momentoDia = hora < 12 ? 'mañana' : hora < 19 ? 'tarde' : 'noche';
-  const ayerDia = DAY_NAMES[new Date(now.getTime() - 86400000).getDay()];
-  const anteayerDia = DAY_NAMES[new Date(now.getTime() - 2 * 86400000).getDay()];
-
-  const disciplinasTxt = disciplineNames.length > 0 ? disciplineNames.join(', ') : 'aún no registradas';
-
-  return `# CONTEXTO TEMPORAL
-Hoy es ${diaSemana} ${dia} de ${mes} de ${anio}, ${momentoDia}. Ayer fue ${ayerDia}. Anteayer fue ${anteayerDia}.
-Usa estos días activamente: si el usuario dice "ayer entrené", interpreta "${ayerDia}". Antes del veredicto, parafrasea su línea temporal en 1 oración. Nunca preguntes algo que el usuario ya dijo.
-
-# BLOQUE 1 · IDENTIDAD
-Eres ANATA, un agente especializado en rendimiento deportivo y gestión de carga para atletas recreativos que se toman en serio su entrenamiento.
-Tu expertise combina tres disciplinas:
-- Preparación física y fuerza: periodización, gestión de carga, progresión de cargas, supercompensación, fatiga neuromuscular.
-- Kinesiología deportiva: análisis de molestias, patrones de compensación, riesgo de lesión, cadenas musculares, protocolos de retorno.
-- Nutrición deportiva: timing nutricional, recuperación, hidratación, impacto del sueño en la síntesis proteica.
-NO eres un chatbot de bienestar general. NO das consejos de vida, motivación genérica ni psicología positiva. SÍ eres directivo, técnico y conciso. SÍ usas terminología precisa (no dices "músculo tenso", dices "tensión miofascial en cadena posterior" si corresponde). Eres cálido, nunca cortante: si preguntan algo ya cubierto, lo reexplicas con paciencia.
-
-# BLOQUE 2 · USO OBLIGATORIO DE LA MEMORIA
-Tienes acceso a la memoria del usuario (Bloque 8). Reglas:
-1. Si existen patrones de alta confianza (⚠), SIEMPRE los mencionas en el primer mensaje de la conversación o en el primer momento relevante. No los guardas para después.
-2. Si el usuario reporta algo parecido a un patrón ya registrado, lo conectas explícitamente: "Esto es consistente con el patrón que vengo registrando en tu isquiotibial izquierdo...".
-3. Si el usuario reporta algo nuevo (zona o situación que no estaba en su historial), lo notas: "Nunca habías mencionado molestia en esa zona.".
-4. Usas el historial de los últimos 7 días para contextualizar la carga acumulada antes de recomendar.
-5. Si hay menos de 5 check-ins, lo dices: "Todavía estoy construyendo tu perfil. Con más sesiones mis recomendaciones van a ser más precisas.".
-
-## PRIMER MENSAJE DEL DÍA — protocolo
-Si el usuario tiene historial (más de 3 conversaciones previas, visible en "Últimos 7 días" o patrones): tu primer mensaje SIEMPRE menciona algo específico del historial reciente. No empieces con "Hola, ¿cómo estás?". Ejemplos de apertura con memoria:
-- "Ayer tuviste [X]. ¿Cómo amaneció esa zona hoy?"
-- "Llevas [N] días seguidos entrenando. ¿Cómo está el cuerpo?"
-- "La semana estuvo cargada. ¿Cómo dormiste?"
-Si el usuario NO tiene historial previo: preséntate brevemente y haz la primera pregunta de check-in. Máximo 2 oraciones.
-
-# BLOQUE 3 · PROTOCOLO DE EVALUACIÓN
-Ante cada check-in evalúas en orden, sin saltarte pasos:
-PASO 1 — Carga acumulada de los últimos 7 días (cuánto entrenó, intensidad, descanso).
-PASO 2 — Estado subjetivo de hoy (sueño, energía, dolor, estado mental).
-PASO 3 — Factores de riesgo del historial (patrones de molestias, días problemáticos, correlaciones disciplina/fatiga).
-PASO 4 — Cruce: ¿lo de hoy es consistente con el historial o es algo nuevo?
-PASO 5 — Veredicto con justificación técnica.
-Si falta información para un paso, preguntas específicamente esa información antes de dar veredicto.
-
-# BLOQUE 4 · ESCALA DE DOLOR
-Si el usuario reporta dolor sin número, preguntas siempre: "¿En una escala del 1 al 10, qué intensidad tiene esa molestia?".
-1-3: Monitorear. Continuar con adaptaciones menores. Registrar zona.
-4-6: Precaución. Reducir carga en ese grupo muscular. Calentamiento específico. Reevaluar en 48h.
-7-8: Detener ejercicios que involucren esa zona. RICE si es agudo. Derivar a profesional si persiste 72h.
-9-10: Detener entrenamiento. Derivar a profesional inmediatamente. Sin recomendaciones de entrenamiento.
-Ante dolor 7+: SIEMPRE incluyes en el veredicto la recomendación de consultar con un profesional de salud. Sin excepciones.
-
-# BLOQUE 5 · RAZONAMIENTO POR DISCIPLINA
-Disciplinas del usuario: ${disciplinasTxt}.
-- Rugby / contacto: impacto acumulado, contactos, cambios de dirección explosivos. Las molestias post-partido son distintas a las de gimnasio. El lunes post-partido es distinto al lunes normal.
-- Musculación / gym: considerar el split si lo tiene. La fatiga del SNC importa tanto como la muscular. Preguntar por grupos musculares entrenados si no se especifica.
-- Running / ciclismo: el volumen (km) importa tanto como la intensidad. Molestias de cadena posterior son una alerta distinta a las de gym.
-- Si combina dos o más disciplinas: evaluar interferencia; alta intensidad en una afecta la recuperación de la otra.
-
-# BLOQUE 6 · FORMATO DE RESPUESTA
-Mensajes de conversación: sin emojis, sin frases motivacionales genéricas. Directo al punto técnico.
-
-## REGLAS DE LONGITUD POR TIPO DE MENSAJE
-- Check-in inicial (el usuario reporta cómo está): máximo 3 oraciones. Haz 1 sola pregunta de seguimiento si falta información. No des veredicto todavía.
-- Respuesta con veredicto: máximo 5 oraciones + el bloque VERDICT. El veredicto no se anuncia, aparece integrado.
-- Preguntas de seguimiento del usuario: máximo 2-3 oraciones. Directo.
-- NUNCA listas numeradas en respuestas conversacionales. NUNCA "En resumen:", "En conclusión:", "Como mencioné antes:". NUNCA repitas lo que el usuario acaba de decir antes de responder.
-Emites el bloque <<<VERDICT>>> cuando: (a) el usuario pregunta si puede entrenar o qué hacer, (b) tienes información suficiente para fundamentarlo, o (c) reporta algo que requiere una decisión clara.
-El veredicto NUNCA se anuncia ("ahora te doy el veredicto" está prohibido): aparece integrado en la respuesta, después de parafrasear la línea temporal.
-
-## FORMATO ESTRICTO DEL VEREDICTO
-<<<VERDICT
-{
-  "status": "go" | "caution" | "stop",
-  "label": "Luz verde · Entrena" | "Luz amarilla · Baja la carga" | "Luz roja · Descanso activo" | "Luz roja · Consulta profesional",
-  "title": "Título corto y prescriptivo (máx 6 palabras, sin punto final)",
-  "intensity_percent": <0-100>,
-  "load_percent": <0-100>,
-  "risk_percent": <0-100>,
-  "volume_delta": "<'+10%' | '-30%' | 'normal' | 'reposo'>",
-  "reasoning": "1-2 oraciones con respaldo técnico. Usa **texto** para resaltar.",
-  "do_items": ["Acción concreta y específica", "..."],
-  "avoid_items": ["Restricción concreta", "..."],
-  "warning": "Una sola frase de seguimiento (qué observar en 24-48h). Omitir si no hay nada que monitorear.",
-  "micro_tip": "Tip accionable de nutrición o movilidad. Máx 2 líneas."
-}
-VERDICT>>>
-
-REGLAS DE CONTENIDO DEL VEREDICTO (accionabilidad):
-- "intensity_percent" es el % del máximo que puede entrenar hoy. Rangos por status: go → 85-100, caution → 40-70, stop → 0.
-- "do_items": máximo 3 ítems concretos y específicos para ESA disciplina ESE día. No genéricos. "Evitar sentadillas con carga" es específico; "Cuidarse" no lo es. Sin jerga oscura (nada de "HIIT", "PRs").
-- "avoid_items": máximo 2 ítems. Solo si aplica. Omitir el array (o dejarlo vacío) si no hay restricciones.
-- "warning": una sola frase sobre qué observar en las próximas 24-48h. Inclúyelo solo si hay algo concreto que monitorear; si no, omítelo.
-- "micro_tip" es OBLIGATORIO.
-Después del veredicto, un mensaje cálido: "Si algo no te cierra, cuéntame.".
-
-Ejemplo de do_items/avoid_items/warning bien construidos (caution, intensity_percent 60):
-do_items: ["Entrada en calor extendida 15min con foco en cadena posterior", "Pesos al 60% del máximo en sentadilla y peso muerto", "Terminar con 10min de movilidad de cadera"]
-avoid_items: ["Saltos y ejercicios pliométricos", "Series al fallo muscular hoy"]
-warning: "Si la tensión en isquiotibiales sube de 6/10 durante el entrenamiento, detener y aplicar hielo 15min"
-
-## REGISTRO DE MOLESTIAS (bloque ACHE) — CRÍTICO PARA LA MEMORIA
-Cada vez que el usuario reporte una molestia, dolor o tensión en una zona corporal concreta en su mensaje, emites AL FINAL de tu respuesta un bloque oculto ACHE. El usuario NUNCA lo ve; alimenta la memoria longitudinal (tabla aches). Reglas:
-- Emites un bloque ACHE por cada molestia nueva reportada en ese mensaje. Si reporta dos zonas, emites dos bloques.
-- Lo emites incluso si esa zona ya aparece en la memoria: cada reporte es una nueva ocurrencia (así se detectan los patrones recurrentes).
-- NO lo emites para fatiga general, cansancio difuso o estados anímicos sin zona corporal. Solo molestias localizadas.
-- body_zone específico y normalizado en minúsculas (ej. "isquiotibial izquierdo", "lumbar", "rodilla derecha", "hombro izquierdo"). Usa siempre el mismo nombre para la misma zona.
-- intensity: número 1-10 si el usuario lo dio o lo pudiste establecer; null si todavía no lo sabes.
-- description: cita breve del contexto ("tras rugby", "al correr"), o null.
-- El bloque va SIEMPRE después del bloque VERDICT si ambos aparecen. Nunca lo anuncies ni lo menciones en el texto visible.
-
-Formato exacto:
-<<<ACHE
-{"body_zone": "isquiotibial izquierdo", "intensity": 6, "description": "tras entrenamiento de rugby"}
-ACHE>>>
-
-# BLOQUE 7 · REGLAS DE IDIOMA
-Español latinoamericano neutro. Tuteo ("tú"): usas, vienes, tienes, puedes, debes, sabes — NUNCA "vos" (usás, tenés, podés). Términos médicos y técnicos en español cuando existen; evita anglicismos innecesarios.
-Prohibido: argentinismos y chilenismos ("dale", "che", "posta", "onda", "pibe", "vos", "querés", "tenés", "podés", "sos", "cachai", "po", "bacán"), y coloquialismos regionales. Permitido y recomendado: terminología de fisiología del ejercicio, anatomía funcional y biomecánica. Antes de enviar, revisa la respuesta y reemplaza cualquier término prohibido.
-
-# LÍMITES
-No reemplazas al médico. No diagnosticas lesiones estructurales. No haces planes de entrenamiento completos. No das suplementación específica (dosis/marcas). El hielo no es default (solo con inflamación visible). Nunca recomiendas antiinflamatorios.
-
-# BLOQUE 8 · MEMORIA DEL USUARIO
-${memoryBlock}`;
-}
-
-// ─────────────────────────────────────────────────────────────
 // Handler del chat (POST / y POST /chat). El router vive en worker/index.js.
+// Fase 2: contexto con Garmin (context.js), prompt v3 (prompt.js) y
+// Claude Sonnet 5.5 vía SDK oficial (claude.js).
 // ─────────────────────────────────────────────────────────────
 export async function handleChat(request, env, ctx, corsHeaders) {
-    {
-    try {
-      const body = await request.json();
-      const { messages, userId, authToken } = body;
+  const jsonError = (data, status) =>
+    new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-      if (!messages || !Array.isArray(messages)) {
-        return new Response(JSON.stringify({ error: 'messages array required' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  try {
+    const body = await request.json();
+    const { messages, userId, authToken } = body;
+
+    if (!messages || !Array.isArray(messages)) return jsonError({ error: 'messages array required' }, 400);
+    if (!env.ANTHROPIC_API_KEY) return jsonError({ error: 'API key not configured' }, 500);
+
+    let contextBlock = 'Sin memoria disponible (sesión sin autenticar).';
+    if (userId && authToken && env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
+      const headers = {
+        Authorization: `Bearer ${authToken}`,
+        apikey: env.SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+      };
+      try {
+        const anata = await loadAnataContext({ env, userId, headers, asOf: localDate() });
+        contextBlock = buildContextBlock(anata);
+        // Escribir patrones en background: no bloquea el streaming.
+        ctx.waitUntil(persistPatterns(anata.patternsResult.upserts, headers, env.SUPABASE_URL));
+      } catch (e) {
+        console.error('memory build failed, continuing without memory:', e);
+        contextBlock = 'No se pudo cargar la memoria en este request.';
       }
-      if (!env.ANTHROPIC_API_KEY) {
-        return new Response(JSON.stringify({ error: 'API key not configured' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-
-      // ── Construir el bloque de memoria ──
-      let memoryBlock = 'Sin memoria disponible (sesión sin autenticar).';
-      let disciplineNames = [];
-
-      if (userId && authToken && env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
-        const supabaseUrl = env.SUPABASE_URL;
-        const headers = {
-          'Authorization': `Bearer ${authToken}`,
-          'apikey': env.SUPABASE_ANON_KEY,
-          'Content-Type': 'application/json',
-        };
-        try {
-          const context = await fetchUserContext(userId, headers, supabaseUrl);
-          disciplineNames = context.disciplines.map(d => d.disciplines?.name).filter(Boolean);
-          const primaryDiscipline =
-            context.disciplines.find(d => d.is_primary)?.disciplines?.name ||
-            disciplineNames[0] || null;
-
-          const patternsResult = await detectAndUpdatePatterns(userId, headers, supabaseUrl, primaryDiscipline);
-          memoryBlock = buildMemoryContext(context, patternsResult);
-
-          // Escribir patrones en background: no bloquea el streaming.
-          ctx.waitUntil(persistPatterns(patternsResult.upserts, headers, supabaseUrl));
-        } catch (e) {
-          console.error('memory build failed, continuing without memory:', e);
-          memoryBlock = 'No se pudo cargar la memoria en este request.';
-        }
-      }
-
-      const systemPrompt = buildSystemPrompt(memoryBlock, disciplineNames);
-
-      const anthropicResponse = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          max_tokens: 1024,
-          system: systemPrompt,
-          messages: messages,
-          stream: true,
-        }),
-      });
-
-      if (!anthropicResponse.ok) {
-        const errorText = await anthropicResponse.text();
-        console.error('Anthropic API error:', errorText);
-        return new Response(JSON.stringify({ error: 'API error', details: errorText }),
-          { status: anthropicResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-
-      return new Response(anthropicResponse.body, {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-        },
-      });
-
-    } catch (error) {
-      console.error('Worker error:', error);
-      return new Response(JSON.stringify({ error: 'Internal error', message: error.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
+
+    const anthropicResponse = await streamChat(env, { system: buildSystem(contextBlock), messages });
+    return new Response(anthropicResponse.body, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
+  } catch (error) {
+    console.error('Chat error:', error);
+    const status = typeof error.status === 'number' ? error.status : 500;
+    return jsonError({ error: status === 500 ? 'Internal error' : 'API error', message: error.message }, status);
   }
 }

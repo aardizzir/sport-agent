@@ -1,0 +1,12 @@
+{
+  "name": "sport-agent-api",
+  "private": true,
+  "description": "ANATA · Cloudflare Worker (el frontend es estático y no usa este archivo)",
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.12.0"
+  }
+}
